@@ -17,9 +17,9 @@ type SSHConfig struct {
 	PrivateFile  string                           // RSA私钥文件
 }
 
-// Start run cli
+// RunSSH run cli
 // example golang.org/x/crypto@v0.26.0/ssh/example_test.go:25
-func Start(cfg *Config) error {
+func RunSSH(cfg *Config) error {
 	// SSH 配置
 	config := &ssh.ServerConfig{
 		NoClientAuth: cfg.NoClientAuth,
@@ -65,7 +65,6 @@ func Start(cfg *Config) error {
 		}
 		go handleConnection(tcpConn, config)
 	}
-	return nil
 }
 
 func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
@@ -112,6 +111,31 @@ func handleChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel) {
 	go handleChannelRequests(sshConn, channel, reqs)
 
 	// 执行命令
+	/*cfg := &readline.Config{
+		Prompt: sshConn.User() + "$ ",
+		Stdin:  channel,
+		Stdout: channel,
+		Stderr: channel,
+	}
+	rl, err := readline.NewEx(cfg)
+	if err != nil {
+		return
+	}
+	for {
+		line, err := rl.Readline()
+		if err != nil {
+			break
+		}
+		command := strings.TrimSpace(line)
+		fmt.Printf("[%s@%s]Receive command: %s\r\n", sshConn.User(), sshConn.RemoteAddr(), command)
+		if i, err := rl.Write([]byte(command)); err == nil {
+			fmt.Printf("[%s@%s]Write %d bytes\r\n", sshConn.User(), sshConn.RemoteAddr(), i)
+		} else {
+			fmt.Printf("[%s@%s]Write fail %v", sshConn.User(), sshConn.RemoteAddr(), err)
+		}
+	}*/
+
+	// 执行命令
 	terminal := term.NewTerminal(channel, sshConn.User()+"$ ")
 	for {
 		line, err := terminal.ReadLine()
@@ -120,7 +144,11 @@ func handleChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel) {
 		}
 		command := strings.TrimSpace(line)
 		fmt.Printf("[%s@%s]Receive command: %s\r\n", sshConn.User(), sshConn.RemoteAddr(), command)
-		channel.Write([]byte(command + "...\r\n"))
+		if i, err := terminal.Write([]byte(command)); err == nil {
+			fmt.Printf("[%s@%s]Write %d bytes\r\n", sshConn.User(), sshConn.RemoteAddr(), i)
+		} else {
+			fmt.Printf("[%s@%s]Write fail %v", sshConn.User(), sshConn.RemoteAddr(), err)
+		}
 	}
 }
 

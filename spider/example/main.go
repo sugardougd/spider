@@ -31,7 +31,7 @@ func RunSSH() {
 		Description: "spider is a tool to list and diagnose Go processes",
 		SSHConfig: spider.SSHConfig{
 			TCPConfig:    spider.TCPConfig{Address: ":4322"},
-			NoClientAuth: false,
+			NoClientAuth: true,
 			Banner:       "welcome to spider!\r\n",
 			PrivateFile:  "ssh/spider",
 			PasswordFunc: func(user, password string) bool {
@@ -39,7 +39,7 @@ func RunSSH() {
 			},
 		},
 	}
-	if err := spider.Start(cfg); err != nil {
+	if err := spider.RunSSH(cfg); err != nil {
 		fmt.Printf("Start() error = %v", err)
 	}
 }

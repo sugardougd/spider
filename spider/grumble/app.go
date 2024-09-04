@@ -284,7 +284,8 @@ func (a *App) Run() (err error) {
 	a.commands.SortRecursive()
 
 	// Remove the program name from the args.
-	args := os.Args
+	//args := os.Args
+	var args []string // by leiqian
 	if len(args) > 0 {
 		args = args[1:]
 	}
