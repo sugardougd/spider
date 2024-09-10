@@ -2,60 +2,45 @@ package spider
 
 import (
 	"fmt"
+	"github.com/desertbit/readline"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/term"
 	"net"
 	"os"
-	"strings"
+	"spider/grumble"
 )
 
+type SSHSpider struct {
+	cfg *SSHConfig
+}
+
 type SSHConfig struct {
-	TCPConfig
+	*grumble.Config
+	Address      string                           // 监听地址 IP:PORT
 	NoClientAuth bool                             // 是否认证客户端
 	PasswordFunc func(user, password string) bool // 校验用户名密码
 	Banner       string                           // banner
 	PrivateFile  string                           // RSA私钥文件
+	Commands     CommandsSet
 }
 
-// RunSSH run cli
+// RunSSH run ssh cli
 // example golang.org/x/crypto@v0.26.0/ssh/example_test.go:25
-func RunSSH(cfg *Config) error {
+func RunSSH(cfg *SSHConfig) error {
+	s := &SSHSpider{cfg: cfg}
+	if cfg.FuncIsTerminal == nil {
+		cfg.FuncIsTerminal = s.FuncIsTerminal
+	}
 	// SSH 配置
-	config := &ssh.ServerConfig{
-		NoClientAuth: cfg.NoClientAuth,
-	}
-	if cfg.PasswordFunc != nil {
-		config.PasswordCallback = func(conn ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-			// 这里可以添加你自己的认证逻辑，例如检查用户名和密码
-			if cfg.PasswordFunc(conn.User(), string(pass)) {
-				return nil, nil
-			}
-			return nil, fmt.Errorf("password rejected for %q", conn.User())
-		}
-	}
-
-	// banner
-	config.BannerCallback = func(conn ssh.ConnMetadata) string {
-		return cfg.Banner
-	}
-
-	// 生成一个 SSH 密钥对
-	privateBytes, err := os.ReadFile(cfg.PrivateFile)
+	sshCfg, err := s.newSSHConfig()
 	if err != nil {
 		return err
 	}
-	privateKey, err := ssh.ParsePrivateKey(privateBytes)
-	if err != nil {
-		return err
-	}
-	config.AddHostKey(privateKey)
-
 	// 监听 TCP 端口
 	listener, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Listening on %s\r\n", cfg.Address)
+	fmt.Printf("Listening SSH on %s\r\n", cfg.Address)
 
 	for {
 		tcpConn, err := listener.Accept()
@@ -63,14 +48,14 @@ func RunSSH(cfg *Config) error {
 			fmt.Printf("Failed to accept connection: %v\r\n", err)
 			continue
 		}
-		go handleConnection(tcpConn, config)
+		go s.handleConnection(tcpConn, sshCfg)
 	}
 }
 
-func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
+func (s *SSHSpider) handleConnection(conn net.Conn, sshCfg *ssh.ServerConfig) {
 	defer conn.Close()
 	// 进行 SSH 握手
-	sshConn, chans, reqs, err := ssh.NewServerConn(conn, config)
+	sshConn, chans, reqs, err := ssh.NewServerConn(conn, sshCfg)
 	if err != nil {
 		fmt.Printf("Failed to establish SSH connection: %v\r\n", err)
 		return
@@ -79,14 +64,14 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 	fmt.Printf("[%s@%s]New SSH connection\r\n", sshConn.User(), sshConn.RemoteAddr())
 
 	// 处理通道和请求
-	go handleRequests(sshConn, reqs)
+	go s.handleRequests(sshConn, reqs)
 
 	for newChannel := range chans {
-		go handleChannel(sshConn, newChannel)
+		go s.handleChannel(sshConn, newChannel)
 	}
 }
 
-func handleRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request) {
+func (s *SSHSpider) handleRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request) {
 	//ssh.DiscardRequests(reqs)
 	for req := range reqs {
 		fmt.Printf("[%s@%s]Received request: %s %t\r\n", sshConn.User(), sshConn.RemoteAddr(), req.Type, req.WantReply)
@@ -96,7 +81,7 @@ func handleRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request) {
 	}
 }
 
-func handleChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel) {
+func (s *SSHSpider) handleChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel) {
 	fmt.Printf("[%s@%s]NewChannel type: %s\r\n", sshConn.User(), sshConn.RemoteAddr(), newChannel.ChannelType())
 	if newChannel.ChannelType() != "session" {
 		newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
@@ -108,35 +93,27 @@ func handleChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel) {
 		return
 	}
 	defer channel.Close()
-	go handleChannelRequests(sshConn, channel, reqs)
+	go s.handleChannelRequests(sshConn, channel, reqs)
 
 	// 执行命令
-	/*cfg := &readline.Config{
-		Prompt: sshConn.User() + "$ ",
-		Stdin:  channel,
-		Stdout: channel,
-		Stderr: channel,
+	rlCfg := &readline.Config{
+		Prompt:         sshConn.User() + "$ ",
+		Stdin:          channel,
+		Stdout:         channel,
+		Stderr:         channel,
+		FuncIsTerminal: s.cfg.FuncIsTerminal,
 	}
-	rl, err := readline.NewEx(cfg)
+	rl, err := readline.NewEx(rlCfg)
 	if err != nil {
 		return
 	}
-	for {
-		line, err := rl.Readline()
-		if err != nil {
-			break
-		}
-		command := strings.TrimSpace(line)
-		fmt.Printf("[%s@%s]Receive command: %s\r\n", sshConn.User(), sshConn.RemoteAddr(), command)
-		if i, err := rl.Write([]byte(command)); err == nil {
-			fmt.Printf("[%s@%s]Write %d bytes\r\n", sshConn.User(), sshConn.RemoteAddr(), i)
-		} else {
-			fmt.Printf("[%s@%s]Write fail %v", sshConn.User(), sshConn.RemoteAddr(), err)
-		}
-	}*/
+	app := NewGrumble(s.cfg.Config, s.cfg.Commands)
+	if err := app.RunWithReadline(rl); err != nil {
+		fmt.Printf("run %s fail. %v\r\n", s.cfg.Name, err)
+	}
 
 	// 执行命令
-	terminal := term.NewTerminal(channel, sshConn.User()+"$ ")
+	/*terminal := term.NewTerminal(channel, sshConn.User()+"$ ")
 	for {
 		line, err := terminal.ReadLine()
 		if err != nil {
@@ -149,10 +126,10 @@ func handleChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel) {
 		} else {
 			fmt.Printf("[%s@%s]Write fail %v", sshConn.User(), sshConn.RemoteAddr(), err)
 		}
-	}
+	}*/
 }
 
-func handleChannelRequests(sshConn *ssh.ServerConn, channel ssh.Channel, reqs <-chan *ssh.Request) {
+func (s *SSHSpider) handleChannelRequests(sshConn *ssh.ServerConn, channel ssh.Channel, reqs <-chan *ssh.Request) {
 	for req := range reqs {
 		fmt.Printf("[%s@%s]Received channel request: %s %t\r\n", sshConn.User(), sshConn.RemoteAddr(), req.Type, req.WantReply)
 		switch req.Type {
@@ -165,4 +142,40 @@ func handleChannelRequests(sshConn *ssh.ServerConn, channel ssh.Channel, reqs <-
 
 		}
 	}
+}
+
+func (s *SSHSpider) newSSHConfig() (*ssh.ServerConfig, error) {
+	sshCfg := &ssh.ServerConfig{
+		NoClientAuth: s.cfg.NoClientAuth,
+	}
+	if s.cfg.PasswordFunc != nil {
+		sshCfg.PasswordCallback = func(conn ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			// 这里可以添加你自己的认证逻辑，例如检查用户名和密码
+			if s.cfg.PasswordFunc(conn.User(), string(pass)) {
+				return nil, nil
+			}
+			return nil, fmt.Errorf("password rejected for %q", conn.User())
+		}
+	}
+
+	// banner
+	sshCfg.BannerCallback = func(conn ssh.ConnMetadata) string {
+		return s.cfg.Banner
+	}
+
+	// 生成一个 SSH 密钥对
+	privateBytes, err := os.ReadFile(s.cfg.PrivateFile)
+	if err != nil {
+		return nil, err
+	}
+	privateKey, err := ssh.ParsePrivateKey(privateBytes)
+	if err != nil {
+		return nil, err
+	}
+	sshCfg.AddHostKey(privateKey)
+	return sshCfg, nil
+}
+
+func (s *SSHSpider) FuncIsTerminal() bool {
+	return true
 }

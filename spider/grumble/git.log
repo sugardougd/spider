@@ -1,1 +1,8 @@
-tag v1.1.3
+commit cb728c9a422d6418d1449b81ca6adbf7ac3f383f (HEAD -> master, origin/master, origin/HEAD)
+Merge: 0253f99 f9e9d08
+Author: skaldesh <sebastian@desertbit.com>
+Date:   Thu Jul 25 08:42:25 2024 +0200
+
+    Merge pull request #62 from desertbit/dependabot/go_modules/golang.org/x/crypto-0.17.0
+    
+    Bump golang.org/x/crypto from 0.6.0 to 0.17.0

@@ -9,7 +9,6 @@ require (
 	github.com/desertbit/readline v1.5.1
 	github.com/fatih/color v1.17.0
 	golang.org/x/crypto v0.26.0
-	golang.org/x/term v0.23.0
 )
 
 require (
