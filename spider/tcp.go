@@ -55,7 +55,7 @@ func (s *TCPSpider) handleConnection(conn net.Conn) {
 	if err != nil {
 		return
 	}
-	app := NewGrumble(s.cfg.Config, s.cfg.Commands)
+	app := newGrumble(s.cfg.Config, s.cfg.Commands)
 	if err := app.RunWithReadline(rl); err != nil {
 		fmt.Printf("run %s fail. %v\r\n", s.cfg.Name, err)
 	}

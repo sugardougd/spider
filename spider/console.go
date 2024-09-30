@@ -34,7 +34,7 @@ func RunConsole(cfg *ConsoleConfig) error {
 	if err != nil {
 		return err
 	}
-	app := NewGrumble(cfg.Config, cfg.Commands)
+	app := newGrumble(cfg.Config, cfg.Commands)
 	if err := app.RunWithReadline(rl); err != nil {
 		fmt.Printf("run %s fail. %v\r\n", cfg.Name, err)
 		return err

@@ -180,6 +180,12 @@ func (a *App) SetPrintCommandHelp(f func(a *App, c *Command, shell bool)) {
 	a.printCommandHelp = f
 }
 
+func (a *App) PrintCommandHelp(c *Command, shell bool) {
+	if a.printCommandHelp != nil {
+		a.printCommandHelp(a, c, shell)
+	}
+}
+
 // SetPrintASCIILogo sets the function to print the ASCII logo.
 func (a *App) SetPrintASCIILogo(f func(a *App)) {
 	a.printASCIILogo = func(a *App) {
