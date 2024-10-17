@@ -24,14 +24,16 @@ func NoyaCommands() *grumble.Commands {
 		Name: "math-add",
 		Help: "displays math-add problem",
 		Flags: func(f *grumble.Flags) {
-			f.Int("t", "top", 10, "the sum top")
+			f.Int("l", "low", 0, "the low value")
+			f.Int("t", "top", 10, "the top value")
 			f.Int("c", "count", 10, "the count of problem")
 		},
 		Run: func(c *grumble.Context) error {
+			low := c.Flags.Int("low")
 			top := c.Flags.Int("top")
 			count := c.Flags.Int("count")
 			out := make(chan string)
-			go calculate(count, []mathOperator{&mathAddOperator{top}}, out)
+			go calculate(count, []mathOperator{&mathAddOperator{low, top}}, out)
 			for o := range out {
 				c.App.Println(o)
 			}
@@ -43,14 +45,16 @@ func NoyaCommands() *grumble.Commands {
 		Name: "math-sub",
 		Help: "displays math-sub problem",
 		Flags: func(f *grumble.Flags) {
-			f.Int("t", "top", 10, "the sum top")
+			f.Int("l", "low", 0, "the low value")
+			f.Int("t", "top", 10, "the top top")
 			f.Int("c", "count", 10, "the count of problem")
 		},
 		Run: func(c *grumble.Context) error {
+			low := c.Flags.Int("low")
 			top := c.Flags.Int("top")
 			count := c.Flags.Int("count")
 			out := make(chan string)
-			go calculate(count, []mathOperator{&mathSubOperator{top}}, out)
+			go calculate(count, []mathOperator{&mathSubOperator{low, top}}, out)
 			for o := range out {
 				c.App.Println(o)
 			}
@@ -62,14 +66,16 @@ func NoyaCommands() *grumble.Commands {
 		Name: "math-add-sub",
 		Help: "displays math-add & math-sub problem",
 		Flags: func(f *grumble.Flags) {
-			f.Int("t", "top", 10, "the sum top")
+			f.Int("l", "low", 0, "the low value")
+			f.Int("t", "top", 10, "the top top")
 			f.Int("c", "count", 10, "the count of problem")
 		},
 		Run: func(c *grumble.Context) error {
+			low := c.Flags.Int("low")
 			top := c.Flags.Int("top")
 			count := c.Flags.Int("count")
 			out := make(chan string)
-			go calculate(count, []mathOperator{&mathAddOperator{top}, &mathSubOperator{top}}, out)
+			go calculate(count, []mathOperator{&mathAddOperator{low, top}, &mathSubOperator{low, top}}, out)
 			for o := range out {
 				c.App.Println(o)
 			}
@@ -85,7 +91,6 @@ func NoyaCommands() *grumble.Commands {
 
 func calculate(c int, operators []mathOperator, out chan string) {
 	for i := 0; i < c; i++ {
-		r.Intn(len(operators))
 		if s, err := operators[r.Intn(len(operators))].calculate(); err == nil {
 			out <- s
 		}
@@ -98,22 +103,24 @@ type mathOperator interface {
 }
 
 type mathAddOperator struct {
-	sum int
+	low int
+	top int
 }
 
 func (add *mathAddOperator) calculate() (string, error) {
-	num1 := r.Intn(add.sum)
-	num2 := add.sum - num1
-	//return fmt.Sprintf("%2d + %2d = ", num1, num2), nil
-	return fmt.Sprintf("%d + %d = ", num1, num2), nil
+	num1 := r.Intn(add.top-add.low) + add.low
+	num2 := r.Intn(num1 + 1)
+	num3 := num1 - num2
+	return fmt.Sprintf("%d + %d = ", num2, num3), nil
 }
 
 type mathSubOperator struct {
-	sum int
+	low int
+	top int
 }
 
 func (sub *mathSubOperator) calculate() (string, error) {
-	num1 := r.Intn(sub.sum)
-	//return fmt.Sprintf("%2d - %2d = ", sub.sum, num1), nil
-	return fmt.Sprintf("%d - %d = ", sub.sum, num1), nil
+	num1 := r.Intn(sub.top-sub.low) + sub.low
+	num2 := r.Intn(num1 + 1)
+	return fmt.Sprintf("%d - %d = ", num1, num2), nil
 }

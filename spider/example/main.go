@@ -4,43 +4,13 @@ import (
 	"fmt"
 	"spider"
 	"spider/grumble"
-	"strconv"
-	"strings"
 	"time"
 )
 
 func main() {
-	//padding(9999, 4)
-	//padding(0, 4)
-	//padding(1, 4)
-	//padding(10, 4)
-	//padding(19, 4)
-	//padding(199, 4)
 	RunConsole()
 	//RunTCP()
 	//RunSSH()
-}
-
-func padding(number, width int) {
-	// 将数字转换为字符串
-	numStr := strconv.Itoa(number)
-
-	// 计算左右填充的空格数
-	padding := (width - len(numStr)) / 2
-	leftPadding := strings.Repeat(" ", padding)
-	rightPadding := strings.Repeat(" ", width-len(numStr)-padding)
-	// 如果宽度是奇数，确保字符串真正居中
-	if width%2 == 1 {
-		if len(numStr)%2 == 0 {
-			rightPadding += " "
-		} else {
-			leftPadding += " "
-		}
-	}
-
-	// 最终居中对齐的字符串
-	centered := leftPadding + numStr + rightPadding
-	fmt.Println("Centered Number:", centered)
 }
 
 func RunConsole() {
