@@ -108,7 +108,7 @@ type mathAddOperator struct {
 }
 
 func (add *mathAddOperator) calculate() (string, error) {
-	num1 := r.Intn(add.top-add.low) + add.low
+	num1 := r.Intn(add.top+1-add.low) + add.low
 	num2 := r.Intn(num1 + 1)
 	num3 := num1 - num2
 	return fmt.Sprintf("%d + %d = ", num2, num3), nil
@@ -120,7 +120,7 @@ type mathSubOperator struct {
 }
 
 func (sub *mathSubOperator) calculate() (string, error) {
-	num1 := r.Intn(sub.top-sub.low) + sub.low
+	num1 := r.Intn(sub.top+1-sub.low) + sub.low
 	num2 := r.Intn(num1 + 1)
 	return fmt.Sprintf("%d - %d = ", num1, num2), nil
 }
