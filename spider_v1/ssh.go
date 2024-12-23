@@ -1,4 +1,4 @@
-package spider
+package spider_v1
 
 import (
 	"fmt"

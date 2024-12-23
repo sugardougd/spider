@@ -31,7 +31,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	fmt.Printf("spider %s:%d\r\n", host, port)
+	fmt.Printf("spider_v1 %s:%d\r\n", host, port)
 	if err := tcpClient(host, port); err != nil {
 		fmt.Printf("An error occurred: %v", err)
 	}

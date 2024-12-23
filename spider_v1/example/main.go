@@ -14,28 +14,28 @@ func main() {
 }
 
 func RunConsole() {
-	cfg := &spider.ConsoleConfig{
+	cfg := &spider_v1.ConsoleConfig{
 		Config: &grumble.Config{
-			Name:        "spider",
-			Prompt:      "spider > ",
-			Description: "spider is a tool to list and diagnose Go processes",
+			Name:        "spider_v1",
+			Prompt:      "spider_v1 > ",
+			Description: "spider_v1 is a tool to list and diagnose Go processes",
 		},
 		Commands: func(commands *grumble.Commands) *grumble.Commands {
-			return spider.NoyaCommands()
+			return spider_v1.NoyaCommands()
 		},
 	}
-	if err := spider.RunConsole(cfg); err != nil {
+	if err := spider_v1.RunConsole(cfg); err != nil {
 		fmt.Printf("Start() error = %v", err)
 	}
 }
 
 func RunTCP() {
-	cfg := &spider.TCPConfig{
+	cfg := &spider_v1.TCPConfig{
 		Address: ":4322",
 		Config: &grumble.Config{
-			Name:        "spider",
-			Prompt:      "spider > ",
-			Description: "spider is a tool to list and diagnose Go processes",
+			Name:        "spider_v1",
+			Prompt:      "spider_v1 > ",
+			Description: "spider_v1 is a tool to list and diagnose Go processes",
 			FuncIsTerminal: func() bool {
 				return true
 			},
@@ -44,30 +44,30 @@ func RunTCP() {
 			return timeCommand(commands)
 		},
 	}
-	if err := spider.RunTCP(cfg); err != nil {
+	if err := spider_v1.RunTCP(cfg); err != nil {
 		fmt.Printf("Start() error = %v", err)
 	}
 }
 
 func RunSSH() {
-	cfg := &spider.SSHConfig{
+	cfg := &spider_v1.SSHConfig{
 		Address:      ":4322",
 		NoClientAuth: true,
-		Banner:       "welcome to spider!\r\n",
-		PrivateFile:  "ssh/spider",
+		Banner:       "welcome to spider_v1!\r\n",
+		PrivateFile:  "ssh/spider_v1",
 		PasswordFunc: func(user, password string) bool {
 			return "admin" == user && "admin" == password
 		},
 		Config: &grumble.Config{
-			Name:        "spider",
-			Prompt:      "spider > ",
-			Description: "spider is a tool to list and diagnose Go processes",
+			Name:        "spider_v1",
+			Prompt:      "spider_v1 > ",
+			Description: "spider_v1 is a tool to list and diagnose Go processes",
 		},
 		Commands: func(commands *grumble.Commands) *grumble.Commands {
 			return timeCommand(commands)
 		},
 	}
-	if err := spider.RunSSH(cfg); err != nil {
+	if err := spider_v1.RunSSH(cfg); err != nil {
 		fmt.Printf("Start() error = %v", err)
 	}
 }

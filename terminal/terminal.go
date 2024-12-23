@@ -3,24 +3,12 @@ package terminal
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"fmt"
-	"io"
 )
-
-type Config struct {
-	Prompt     string // eg: root > <command>
-	Stdin      io.ReadCloser
-	Stdout     io.Writer
-	Stderr     io.Writer
-	IsTerminal bool // use interactive or not
-}
 
 type Terminal struct {
 	Config     *Config
 	Line       *Line
-	ctx        context.Context
-	cancel     context.CancelFunc
 	stopSignal chan struct{}
 }
 
@@ -157,7 +145,13 @@ func (l *Line) typeRight(b byte) {
 }
 
 func (l *Line) typeDelete(b byte) {
-	fmt.Println("type delete: ", b)
+	if 0 < l.pos && l.pos <= len(l.buf) {
+		l.pos--
+		buf := make([]byte, len(l.buf)-1)
+		copy(buf, l.buf[:l.pos])
+		copy(buf[l.pos:], l.buf[l.pos+1:])
+		l.buf = buf
+	}
 }
 
 func (l *Line) typeEnter(b byte) {
@@ -179,6 +173,7 @@ func (l *Line) appendRune(b byte) {
 		copy(buf, l.buf[:l.pos])
 		buf[l.pos] = b
 		copy(buf[l.pos+1:], l.buf[l.pos:])
+		l.buf = buf
 		l.pos++
 	}
 

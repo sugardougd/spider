@@ -1,4 +1,4 @@
-package spider
+package spider_v1
 
 import (
 	"os"
@@ -27,7 +27,7 @@ func newGrumble(cfg *grumble.Config, commands CommandsSet) *grumble.App {
 func spiderCommands() *grumble.Commands {
 	commands := grumble.Commands{}
 	sc := &grumble.Command{
-		Name: "spider",
+		Name: "spider_v1",
 		Help: "a tool to list and diagnose Go processes",
 		Run: func(c *grumble.Context) error {
 			c.App.PrintCommandHelp(c.Command, true)
