@@ -1,4 +1,4 @@
-module spider
+module spider_v1
 
 go 1.20
 

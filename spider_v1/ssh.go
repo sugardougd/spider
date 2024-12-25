@@ -111,22 +111,6 @@ func (s *SSHSpider) handleChannel(sshConn *ssh.ServerConn, newChannel ssh.NewCha
 	if err := app.RunWithReadline(rl); err != nil {
 		fmt.Printf("run %s fail. %v\r\n", s.cfg.Name, err)
 	}
-
-	// 执行命令
-	/*terminal := term.NewTerminal(channel, sshConn.User()+"$ ")
-	for {
-		line, err := terminal.ReadLine()
-		if err != nil {
-			break
-		}
-		command := strings.TrimSpace(line)
-		fmt.Printf("[%s@%s]Receive command: %s\r\n", sshConn.User(), sshConn.RemoteAddr(), command)
-		if i, err := terminal.Write([]byte(command)); err == nil {
-			fmt.Printf("[%s@%s]Write %d bytes\r\n", sshConn.User(), sshConn.RemoteAddr(), i)
-		} else {
-			fmt.Printf("[%s@%s]Write fail %v", sshConn.User(), sshConn.RemoteAddr(), err)
-		}
-	}*/
 }
 
 func (s *SSHSpider) handleChannelRequests(sshConn *ssh.ServerConn, channel ssh.Channel, reqs <-chan *ssh.Request) {

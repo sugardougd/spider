@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 )
 
 type Terminal struct {
-	Config     *Config
-	Line       *Line
+	config     *Config
+	line       *Line
 	stopSignal chan struct{}
 }
 
@@ -22,8 +23,8 @@ type Line struct {
 // New Terminal
 func New(config *Config) *Terminal {
 	ter := Terminal{
-		Config: config,
-		Line: &Line{
+		config: config,
+		line: &Line{
 			buf:        make([]byte, 0, 128),
 			pos:        0,
 			line:       make(chan string),
@@ -41,17 +42,29 @@ func New(config *Config) *Terminal {
 // Readline returns a line of input from the terminal.
 func (t *Terminal) Readline() (string, error) {
 	if t.IsRunning() {
-		return t.Line.Line()
+		return t.line.Line()
 	}
 	return "", ErrNotRunning
 }
 
 func (t *Terminal) Write(buf []byte) (int, error) {
-	return t.Config.Stdout.Write(buf)
+	return t.config.Stdout.Write(buf)
+}
+
+func (t *Terminal) Stdin() io.ReadCloser {
+	return t.config.Stdin
+}
+
+func (t *Terminal) Stdout() io.Writer {
+	return t.config.Stdout
+}
+
+func (t *Terminal) Stderr() io.Writer {
+	return t.config.Stderr
 }
 
 func (t *Terminal) WritePrompt() (int, error) {
-	buf := []byte(t.Config.Prompt)
+	buf := []byte(t.config.Prompt)
 	return t.Write(buf)
 }
 
@@ -90,11 +103,11 @@ func (t *Terminal) WriteWithCRLF(buf []byte) (n int, err error) {
 	return n, nil
 }
 
-func (t *Terminal) Close() error {
-	t.Config.Stdin.Close()
+func (t *Terminal) Stop() error {
+	fmt.Println("Stop Terminal")
+	t.config.Stdin.Close()
 	close(t.stopSignal)
-	close(t.Line.stopSignal)
-	fmt.Println("Close Terminal")
+	close(t.line.stopSignal)
 	return nil
 }
 
@@ -108,14 +121,14 @@ func (t *Terminal) IsRunning() bool {
 }
 
 func (t *Terminal) ioloop() {
-	defer t.Line.close()
-	buf := bufio.NewReader(t.Config.Stdin)
+	defer t.line.stop()
+	buf := bufio.NewReader(t.config.Stdin)
 	for t.IsRunning() {
 		b, err := buf.ReadByte()
 		if err != nil {
 			break
 		}
-		t.Line.enterKey(b)
+		t.line.enterKey(b)
 	}
 }
 
@@ -187,9 +200,9 @@ func (l *Line) Line() (string, error) {
 		return line, nil
 	}
 }
-func (l *Line) close() error {
+func (l *Line) stop() error {
+	fmt.Println("stop line")
 	close(l.line)
 	l.buf = l.buf[0:]
-	fmt.Println("Close Line")
 	return nil
 }

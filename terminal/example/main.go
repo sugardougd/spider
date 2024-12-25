@@ -2,18 +2,15 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/term"
-	"io"
 	"os"
+	"spider/terminal"
 	"strings"
-	"terminal"
 	"time"
 )
 
 func main() {
 	TestTerminal()
 	//TestMockTerminal()
-	//TestOsTerminal()
 }
 
 func TestTerminal() {
@@ -73,39 +70,8 @@ func TestMockTerminal() {
 		}
 	}()
 	time.Sleep(time.Second * 10)
-	ter.Close()
+	ter.Stop()
 	time.Sleep(time.Second * 5)
-}
-
-func TestOsTerminal() {
-	terminal := term.NewTerminal(&StdReadWriter{os.Stdin, os.Stdout}, "$ ")
-	for {
-		line, err := terminal.ReadLine()
-		if err != nil {
-			break
-		}
-		command := strings.TrimSpace(line)
-		if i, err := terminal.Write([]byte("type: " + command)); err == nil {
-			fmt.Printf("Write %d bytes\r\n", i)
-		} else {
-			fmt.Printf("Write fail %v", err)
-		}
-	}
-}
-
-type StdReadWriter struct {
-	in  io.Reader
-	out io.Writer
-}
-
-func (std *StdReadWriter) Read(p []byte) (n int, err error) {
-	n, err = std.in.Read(p)
-	return n, err
-}
-
-func (std *StdReadWriter) Write(p []byte) (n int, err error) {
-	n, err = std.out.Write(p)
-	return n, err
 }
 
 type MockReadWriter struct {
