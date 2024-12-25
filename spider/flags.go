@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type FlagParser func(value string, found bool, args []string) (*FlagValue, []string, error)
+type FlagParser func(flag, value string, found bool, args []string) (*FlagValue, []string, error)
 
 type Flags struct {
 	list    []*Flag
@@ -38,7 +38,7 @@ func (flags *Flags) parse(command *Command, args []string, flagValues FlagValues
 		parser, ok := flags.parsers[flag.Long]
 		if ok {
 			var flagValue *FlagValue
-			flagValue, args, err = parser(value, found, args)
+			flagValue, args, err = parser(name, value, found, args)
 			if err != nil {
 				break
 			}
@@ -91,22 +91,22 @@ func (flags *Flags) register(flag *Flag, fp FlagParser) error {
 
 // Bool register a bool flag
 func (flags *Flags) Bool(flag *Flag) error {
-	return flags.register(flag, func(value string, found bool, args []string) (*FlagValue, []string, error) {
-		if found {
-			b, err := strconv.ParseBool(value)
-			if err != nil {
-				return nil, args, fmt.Errorf("invalid boolean value for flag: %s", value)
-			}
-			return &FlagValue{
-				value:     b,
-				isDefault: false,
-			}, args, nil
-		}
-		return &FlagValue{
-			value:     true,
-			isDefault: false,
-		}, args, nil
-	})
+	return flags.register(flag, parseBoolFlag)
+}
+
+// Int register an int flag
+func (flags *Flags) Int(flag *Flag) error {
+	return flags.register(flag, parseIntFlag)
+}
+
+// Float64 register an float64 flag
+func (flags *Flags) Float64(flag *Flag) error {
+	return flags.register(flag, parseFloat64Flag)
+}
+
+// String register a string flag
+func (flags *Flags) String(flag *Flag) error {
+	return flags.register(flag, parseStringFlag)
 }
 
 type Flag struct {
@@ -147,3 +147,76 @@ type FlagValue struct {
 }
 
 type FlagValues map[string]*FlagValue
+
+func parseBoolFlag(flag, value string, found bool, args []string) (*FlagValue, []string, error) {
+	if found {
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return nil, args, fmt.Errorf("invalid boolean value for flag: %s", flag)
+		}
+		return &FlagValue{
+			value:     b,
+			isDefault: false,
+		}, args, nil
+	}
+	return &FlagValue{
+		value:     true,
+		isDefault: false,
+	}, args, nil
+}
+
+func parseIntFlag(flag, value string, found bool, args []string) (*FlagValue, []string, error) {
+	vStr := value
+	if !found {
+		if len(args) > 0 {
+			vStr = args[0]
+			args = args[1:]
+		} else {
+			return nil, args, fmt.Errorf("missing int value for flag: %s", flag)
+		}
+	}
+	b, err := strconv.Atoi(vStr)
+	if err != nil {
+		return nil, args, fmt.Errorf("invalid int value for flag: %s", flag)
+	}
+	return &FlagValue{
+		value:     b,
+		isDefault: false,
+	}, args, nil
+}
+
+func parseFloat64Flag(flag, value string, found bool, args []string) (*FlagValue, []string, error) {
+	vStr := value
+	if !found {
+		if len(args) > 0 {
+			vStr = args[0]
+			args = args[1:]
+		} else {
+			return nil, args, fmt.Errorf("missing float value for flag: %s", flag)
+		}
+	}
+	b, err := strconv.ParseFloat(vStr, 64)
+	if err != nil {
+		return nil, args, fmt.Errorf("invalid float value for flag: %s", flag)
+	}
+	return &FlagValue{
+		value:     b,
+		isDefault: false,
+	}, args, nil
+}
+
+func parseStringFlag(flag, value string, found bool, args []string) (*FlagValue, []string, error) {
+	vStr := value
+	if !found {
+		if len(args) > 0 {
+			vStr = args[0]
+			args = args[1:]
+		} else {
+			return nil, args, fmt.Errorf("missing string value for flag: %s", flag)
+		}
+	}
+	return &FlagValue{
+		value:     vStr,
+		isDefault: false,
+	}, args, nil
+}
