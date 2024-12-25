@@ -43,7 +43,12 @@ func (flags *Flags) parse(command *Command, args []string, flagValues FlagValues
 				break
 			}
 			flagValues[fullName] = flagValue
-		} else {
+		}
+	}
+	// Finally set all the default values for not passed flags.
+	for _, flag := range flags.list {
+		fullName := flag.fullName(command.fullName())
+		if _, ok := flagValues[fullName]; !ok {
 			flagValues[fullName] = &FlagValue{
 				value:     flag.Default,
 				isDefault: true,
@@ -77,6 +82,9 @@ func (flags *Flags) register(flag *Flag, fp FlagParser) error {
 		}
 	}
 	flags.list = append(flags.list, flag)
+	if flags.parsers == nil {
+		flags.parsers = make(map[string]FlagParser)
+	}
 	flags.parsers[flag.Long] = fp
 	return nil
 }

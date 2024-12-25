@@ -15,7 +15,7 @@ type Spider struct {
 	terminal   *terminal.Terminal
 }
 
-func New(config *Config, commands CommandsFunc) *Spider {
+func New(config *Config, commands *Commands) *Spider {
 	s := Spider{
 		config:     config,
 		stopSignal: make(chan struct{}),
@@ -39,7 +39,7 @@ func New(config *Config, commands CommandsFunc) *Spider {
 			return c.Stop()
 		},
 	})
-	for _, cmd := range commands().list {
+	for _, cmd := range commands.list {
 		s.AddCommand(cmd)
 	}
 	return &s
@@ -61,13 +61,15 @@ func (s *Spider) RunCommand(cmd string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("illagel command '%s'", cmd)
 	}
-	command, flagValues, err := s.commands.Parse(args)
+	flagValues := make(FlagValues)
+	command, err := s.commands.Parse(args, flagValues)
 	if err != nil {
 		return err
 	}
 	context := &Context{
 		Spider:     s,
 		Command:    command,
+		CommandStr: cmd,
 		flagValues: flagValues,
 	}
 	if command.Run == nil {

@@ -10,6 +10,14 @@ type Commands struct {
 	list []*Command
 }
 
+func NewCommands(command ...*Command) *Commands {
+	commands := Commands{}
+	for _, c := range command {
+		commands.Add(c)
+	}
+	return &commands
+}
+
 func (commands *Commands) Add(command *Command) error {
 	err := command.validate()
 	if err != nil {
@@ -35,15 +43,18 @@ func (commands *Commands) Find(name string) *Command {
 	return nil
 }
 
-func (commands *Commands) Parse(args []string) (command *Command, flagValues FlagValues, err error) {
+func (commands *Commands) Parse(args []string, flagValues FlagValues) (command *Command, err error) {
 	for len(args) > 0 {
 		// find command
-		cur := commands.Find(args[0])
-		if cur == nil {
+		if command == nil {
+			command = commands.Find(args[0])
+		} else {
+			command = command.FindChildren(args[0])
+		}
+		if command == nil {
 			err = fmt.Errorf("illagel command '%s'", args[0])
 			return
 		}
-		command = cur
 		args = args[1:]
 		// parse flags
 		args, err = command.flags.parse(command, args, flagValues)
@@ -55,13 +66,13 @@ func (commands *Commands) Parse(args []string) (command *Command, flagValues Fla
 }
 
 type Command struct {
-	Name        string                    // name
-	Aliases     []string                  // name aliases.
-	Description string                    // description message for the command.
-	Usage       string                    // define how to use the command.Sample: start [OPTIONS] CONTAINER [CONTAINER...]
-	Flags       func(f *Flags)            // define all command flags within this function.
-	Args        func(c *Command, a *Args) // define all command arguments within this function.
-	Run         func(c *Context) error    // function to execute for the command.
+	Name        string                             // name
+	Aliases     []string                           // name aliases.
+	Description string                             // description message for the command.
+	Usage       string                             // define how to use the command.Sample: start [OPTIONS] CONTAINER [CONTAINER...]
+	Flags       func(flags *Flags)                 // define all command flags within this function.
+	Args        func(command *Command, args *Args) // define all command arguments within this function.
+	Run         func(context *Context) error       // function to execute for the command.
 	flags       Flags
 	args        Args
 	parent      *Command
@@ -75,6 +86,10 @@ func (command *Command) AddChildren(cmd *Command) error {
 		cmd.parent = command
 	}
 	return err
+}
+
+func (command *Command) FindChildren(name string) *Command {
+	return command.children.Find(name)
 }
 
 func (command *Command) RegisterFlags(flag func(c *Command, f *Flags) error) error {
