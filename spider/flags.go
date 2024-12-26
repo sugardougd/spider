@@ -13,6 +13,22 @@ type Flags struct {
 	parsers map[string]FlagParser
 }
 
+type Flag struct {
+	Short   string
+	Long    string
+	Help    string // help message for the flag.
+	Usage   string // define how to use the flag.
+	Require bool
+	Default interface{}
+}
+
+type FlagValue struct {
+	value     interface{}
+	isDefault bool
+}
+
+type FlagValues map[string]*FlagValue
+
 func (flags *Flags) parse(command *Command, args []string, flagValues FlagValues) (remaining []string, err error) {
 	for len(args) > 0 {
 		name := args[0]
@@ -45,17 +61,23 @@ func (flags *Flags) parse(command *Command, args []string, flagValues FlagValues
 			flagValues[fullName] = flagValue
 		}
 	}
-	// Finally set all the default values for not passed flags.
+	remaining = args
+
+	// check require argument and set the default values
 	for _, flag := range flags.list {
 		fullName := flag.fullName(command.fullName())
-		if _, ok := flagValues[fullName]; !ok {
-			flagValues[fullName] = &FlagValue{
-				value:     flag.Default,
-				isDefault: true,
-			}
+		if _, ok := flagValues[fullName]; ok {
+			continue
+		}
+		if flag.Require {
+			err = fmt.Errorf("missing flag '-%s'", flag.Short)
+			break
+		}
+		flagValues[fullName] = &FlagValue{
+			value:     flag.Default,
+			isDefault: true,
 		}
 	}
-	remaining = args
 	return
 }
 
@@ -109,14 +131,6 @@ func (flags *Flags) String(flag *Flag) error {
 	return flags.register(flag, parseStringFlag)
 }
 
-type Flag struct {
-	Short   string
-	Long    string
-	Help    string // help message for the flag.
-	Usage   string // define how to use the flag.
-	Default interface{}
-}
-
 func (flag *Flag) match(f string) bool {
 	return (len(flag.Short) > 0 && f == "-"+flag.Short) ||
 		(len(flag.Long) > 0 && f == "--"+flag.Long)
@@ -141,21 +155,14 @@ func (flag *Flag) validate() error {
 	return nil
 }
 
-type FlagValue struct {
-	value     interface{}
-	isDefault bool
-}
-
-type FlagValues map[string]*FlagValue
-
 func parseBoolFlag(flag, value string, found bool, args []string) (*FlagValue, []string, error) {
 	if found {
-		b, err := strconv.ParseBool(value)
+		v, err := strconv.ParseBool(value)
 		if err != nil {
 			return nil, args, fmt.Errorf("invalid boolean value for flag: %s", flag)
 		}
 		return &FlagValue{
-			value:     b,
+			value:     v,
 			isDefault: false,
 		}, args, nil
 	}

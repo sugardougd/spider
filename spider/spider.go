@@ -62,7 +62,13 @@ func (s *Spider) RunCommand(cmd string) error {
 		return fmt.Errorf("illagel command '%s'", cmd)
 	}
 	flagValues := make(FlagValues)
-	command, err := s.commands.Parse(args, flagValues)
+	command, args, err := s.commands.Parse(args, flagValues)
+	if err != nil {
+		return err
+	}
+	// parse args
+	argValues := make(ArgValues)
+	args, err = command.args.parse(args, argValues)
 	if err != nil {
 		return err
 	}
@@ -71,6 +77,7 @@ func (s *Spider) RunCommand(cmd string) error {
 		Command:    command,
 		CommandStr: cmd,
 		flagValues: flagValues,
+		argValues:  argValues,
 	}
 	if command.Run == nil {
 		return fmt.Errorf("illagel command Run '%s'", command.Name)

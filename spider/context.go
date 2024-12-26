@@ -10,6 +10,7 @@ type Context struct {
 	Command    *Command
 	CommandStr string
 	flagValues FlagValues
+	argValues  ArgValues
 }
 
 // Stop signalizes the app to exit.
@@ -26,6 +27,15 @@ func (context *Context) String() string {
 		for name, flag := range context.flagValues {
 			builder.WriteString(fmt.Sprintf("\n\t%s: %v", name, flag.value))
 			if flag.isDefault {
+				builder.WriteString("[*]")
+			}
+		}
+	}
+	if len(context.argValues) > 0 {
+		builder.WriteString("\nArgument:")
+		for name, arg := range context.argValues {
+			builder.WriteString(fmt.Sprintf("\n\t%s: %v", name, arg.value))
+			if arg.isDefault {
 				builder.WriteString("[*]")
 			}
 		}

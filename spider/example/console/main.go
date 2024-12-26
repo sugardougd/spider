@@ -14,16 +14,16 @@ func main() {
 	}, spider.NewCommands(testCommand()))
 	cmd := []string{
 		//"help",
-		"test ",
-		"test -a -b 1 -c 1.1 -d 1",
-		"test --aaa --bbb 1 --ccc 1.1 --ddd 1",
-		"test -a=false -b=1 -c=1.1 -d=1",
-		"test --aaa=false --bbb=1 --ccc=1.1 --ddd=1",
-		"test subtest",
-		"test subtest -a -b 1 -c 1.1 -d 1",
-		"test subtest --aaa --bbb 1 --ccc 1.1 --ddd 1",
-		"test subtest -a=false -b=1 -c=1.1 -d=1",
-		"test subtest --aaa=false --bbb=1 --ccc=1.1 --ddd=1",
+		"test",
+		"test -a -b 1 -c 1.1 -d 1 false 2 3 4",
+		"test --aaa --bbb 1 --ccc 1.1 --ddd 1 true 2 3 4",
+		"test -a=false -b=1 -c=1.1 -d=1 true 2",
+		"test --aaa=false --bbb=1 --ccc=1.1 --ddd=1 true",
+		"test subtest false 2 3 4",
+		"test subtest -a -b 1 -c 1.1 -d 1 false 2 3 4",
+		"test subtest --aaa --bbb 1 --ccc 1.1 --ddd 1 true 2 3 4",
+		"test subtest -a=false -b=1 -c=1.1 -d=1 true 2",
+		"test subtest --aaa=false --bbb=1 --ccc=1.1 --ddd=1 true",
 		"test --aaa=false --bbb=1 --ccc=1.1 --ddd=1 subtest --aaa=false --bbb=1 --ccc=1.1 --ddd=1",
 		//"err",
 		//"exit",
@@ -45,30 +45,57 @@ func testCommand() *spider.Command {
 			flags.Bool(&spider.Flag{
 				Short:   "a",
 				Long:    "aaa",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "aaa flag",
+				Usage:   "aaa usage",
+				Require: false,
 				Default: false,
 			})
 			flags.Int(&spider.Flag{
 				Short:   "b",
 				Long:    "bbb",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "bbb flag",
+				Usage:   "bbb usage",
 				Default: 99,
 			})
 			flags.Float64(&spider.Flag{
 				Short:   "c",
 				Long:    "ccc",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "ccc flag",
+				Usage:   "ccc usage",
 				Default: 99.99,
 			})
 			flags.Float64(&spider.Flag{
 				Short:   "d",
 				Long:    "ddd",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "ddd flag",
+				Usage:   "ddd usage",
 				Default: "hello spider",
+			})
+		},
+		Args: func(args *spider.Args) {
+			args.Bool(&spider.Arg{
+				Name:    "e",
+				Help:    "e argument",
+				Default: false,
+				Require: false,
+			})
+			args.Int(&spider.Arg{
+				Name:    "f",
+				Help:    "f argument",
+				Default: 1,
+				Require: false,
+			})
+			args.Float64(&spider.Arg{
+				Name:    "g",
+				Help:    "g argument",
+				Default: 1.1,
+				Require: false,
+			})
+			args.String(&spider.Arg{
+				Name:    "h",
+				Help:    "h argument",
+				Default: "1",
+				Require: false,
 			})
 		},
 		Run: func(context *spider.Context) error {
@@ -85,36 +112,61 @@ func testCommand() *spider.Command {
 			flags.Bool(&spider.Flag{
 				Short:   "a",
 				Long:    "aaa",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "aaa flag",
+				Usage:   "aaa usage",
+				Require: false,
 				Default: false,
 			})
 			flags.Int(&spider.Flag{
 				Short:   "b",
 				Long:    "bbb",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "bbb flag",
+				Usage:   "bbb usage",
 				Default: 99,
 			})
 			flags.Float64(&spider.Flag{
 				Short:   "c",
 				Long:    "ccc",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "ccc flag",
+				Usage:   "ccc usage",
 				Default: 99.99,
 			})
 			flags.Float64(&spider.Flag{
 				Short:   "d",
 				Long:    "ddd",
-				Help:    "test flag",
-				Usage:   "test usage",
+				Help:    "ddd flag",
+				Usage:   "ddd usage",
 				Default: "hello spider",
 			})
 		},
+		Args: func(args *spider.Args) {
+			args.Bool(&spider.Arg{
+				Name:    "e",
+				Help:    "e argument",
+				Default: false,
+				Require: false,
+			})
+			args.Int(&spider.Arg{
+				Name:    "f",
+				Help:    "f argument",
+				Default: 1,
+				Require: false,
+			})
+			args.Float64(&spider.Arg{
+				Name:    "g",
+				Help:    "g argument",
+				Default: 1.1,
+				Require: false,
+			})
+			args.String(&spider.Arg{
+				Name:    "h",
+				Help:    "h argument",
+				Default: "1",
+				Require: false,
+			})
+		},
 		Run: func(context *spider.Context) error {
-			context.Spider.Println(context.String())
-			context.Spider.Println("------------------------------------------------------------")
-			return nil
+			return context.Command.Parent.Run(context)
 		},
 	}
 	cmd.AddChildren(subCmd)

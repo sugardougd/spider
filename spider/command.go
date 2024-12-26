@@ -43,53 +43,55 @@ func (commands *Commands) Find(name string) *Command {
 	return nil
 }
 
-func (commands *Commands) Parse(args []string, flagValues FlagValues) (command *Command, err error) {
+func (commands *Commands) Parse(args []string, flagValues FlagValues) (command *Command, remaining []string, err error) {
+	cur := command
 	for len(args) > 0 {
 		// find command
-		if command == nil {
-			command = commands.Find(args[0])
+		if cur == nil {
+			cur = commands.Find(args[0])
 		} else {
-			command = command.FindChildren(args[0])
+			cur = cur.FindChildren(args[0])
 		}
-		if command == nil {
-			err = fmt.Errorf("illagel command '%s'", args[0])
-			return
+		if cur == nil {
+			break
 		}
+		command = cur
 		args = args[1:]
 		// parse flags
 		args, err = command.flags.parse(command, args, flagValues)
 		if err != nil {
-			return
+			break
 		}
 	}
+	remaining = args
 	return
 }
 
 type Command struct {
-	Name        string                             // name
-	Aliases     []string                           // name aliases.
-	Description string                             // description message for the command.
-	Usage       string                             // define how to use the command.Sample: start [OPTIONS] CONTAINER [CONTAINER...]
-	Flags       func(flags *Flags)                 // define all command flags within this function.
-	Args        func(command *Command, args *Args) // define all command arguments within this function.
-	Run         func(context *Context) error       // function to execute for the command.
+	Name        string                       // name
+	Aliases     []string                     // name aliases.
+	Description string                       // description message for the command.
+	Usage       string                       // define how to use the command.Sample: start [OPTIONS] CONTAINER [CONTAINER...]
+	Flags       func(flags *Flags)           // define all command flags within this function.
+	Args        func(args *Args)             // define all command arguments within this function.
+	Run         func(context *Context) error // function to execute for the command.
+	Parent      *Command
+	Children    Commands
 	flags       Flags
 	args        Args
-	parent      *Command
-	children    Commands
 	builtin     bool // Whenever this is a build-in command not added by the user.
 }
 
 func (command *Command) AddChildren(cmd *Command) error {
-	err := command.children.Add(cmd)
+	err := command.Children.Add(cmd)
 	if err == nil {
-		cmd.parent = command
+		cmd.Parent = command
 	}
 	return err
 }
 
 func (command *Command) FindChildren(name string) *Command {
-	return command.children.Find(name)
+	return command.Children.Find(name)
 }
 
 func (command *Command) RegisterFlags(flag func(c *Command, f *Flags) error) error {
@@ -104,13 +106,13 @@ func (command *Command) registerFlags() {
 
 func (command *Command) registerArgs() {
 	if command.Args != nil {
-		command.Args(command, &command.args)
+		command.Args(&command.args)
 	}
 }
 
 func (command *Command) fullName() string {
-	if command.parent != nil {
-		return command.parent.fullName() + "." + command.Name
+	if command.Parent != nil {
+		return command.Parent.fullName() + "." + command.Name
 	}
 	return command.Name
 }
