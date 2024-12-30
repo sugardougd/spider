@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"spider/terminal"
 	"strings"
 	"time"
@@ -14,25 +13,19 @@ func main() {
 }
 
 func TestTerminal() {
-	config := terminal.Config{
-		Prompt: "$ ",
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-	ter := terminal.New(&config)
+	ter := terminal.NewConsole("$ ")
 
 	for {
-		line, err := ter.Readline()
-		if err != nil {
-			fmt.Println("read err: " + err.Error())
+		select {
+		case line := <-ter.Readline():
+			command := strings.TrimSpace(line)
+			if _, err := ter.WriteLine([]byte("type: " + command)); err != nil {
+				fmt.Printf("Write fail %v", err)
+			}
+			ter.WritePrompt()
+		case <-ter.Done():
 			break
 		}
-		command := strings.TrimSpace(line)
-		if _, err := ter.WriteLine([]byte("type: " + command)); err != nil {
-			fmt.Printf("Write fail %v", err)
-		}
-		ter.WritePrompt()
 	}
 }
 
@@ -55,18 +48,18 @@ func TestMockTerminal() {
 	}()
 	go func() {
 		for {
-			line, err := ter.Readline()
-			if err != nil {
-				fmt.Println("read err: " + err.Error())
+			select {
+			case line := <-ter.Readline():
+				command := strings.TrimSpace(line)
+				if i, err := ter.WriteLine([]byte("type: " + command)); err == nil {
+					fmt.Printf("Write %d bytes\r\n", i)
+				} else {
+					fmt.Printf("Write fail %v", err)
+				}
+				ter.WritePrompt()
+			case <-ter.Done():
 				break
 			}
-			command := strings.TrimSpace(line)
-			if i, err := ter.WriteLine([]byte("type: " + command)); err == nil {
-				fmt.Printf("Write %d bytes\r\n", i)
-			} else {
-				fmt.Printf("Write fail %v", err)
-			}
-			ter.WritePrompt()
 		}
 	}()
 	time.Sleep(time.Second * 10)

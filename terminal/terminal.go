@@ -5,31 +5,23 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 )
 
 type Terminal struct {
 	config     *Config
-	line       *Line
-	stopSignal chan struct{}
-}
-
-type Line struct {
-	buf        []byte
-	pos        int
-	line       chan string
+	line       *ReadLine
+	History    *History
 	stopSignal chan struct{}
 }
 
 // New Terminal
 func New(config *Config) *Terminal {
+	config.Init()
 	ter := Terminal{
-		config: config,
-		line: &Line{
-			buf:        make([]byte, 0, 128),
-			pos:        0,
-			line:       make(chan string),
-			stopSignal: make(chan struct{}),
-		},
+		config:     config,
+		line:       NewReadLine(128),
+		History:    NewHistory(5),
 		stopSignal: make(chan struct{}),
 	}
 	go func() {
@@ -39,12 +31,19 @@ func New(config *Config) *Terminal {
 	return &ter
 }
 
-// Readline returns a line of input from the terminal.
-func (t *Terminal) Readline() (string, error) {
-	if t.IsRunning() {
-		return t.line.Line()
+func NewConsole(prompt string) *Terminal {
+	config := Config{
+		Prompt: prompt,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	}
-	return "", ErrNotRunning
+	return New(&config)
+}
+
+// Readline returns a line of input from the terminal.
+func (t *Terminal) Readline() <-chan string {
+	return t.line.Line()
 }
 
 func (t *Terminal) Write(buf []byte) (int, error) {
@@ -110,8 +109,11 @@ func (t *Terminal) Stop() error {
 	close(t.line.stopSignal)
 	return nil
 }
+func (t *Terminal) Done() <-chan struct{} {
+	return t.stopSignal
+}
 
-func (t *Terminal) IsRunning() bool {
+func (t *Terminal) isRunning() bool {
 	select {
 	case <-t.stopSignal:
 		return false
@@ -123,86 +125,13 @@ func (t *Terminal) IsRunning() bool {
 func (t *Terminal) ioloop() {
 	defer t.line.stop()
 	buf := bufio.NewReader(t.config.Stdin)
-	for t.IsRunning() {
+	for t.isRunning() {
+		t.config.FuncMakeRaw()
 		b, err := buf.ReadByte()
 		if err != nil {
 			break
 		}
 		t.line.enterKey(b)
 	}
-}
-
-func (l *Line) enterKey(r byte) {
-	switch r {
-	case KeyTab:
-		l.typeTab(r)
-	case KeyDelete:
-		l.typeDelete(r)
-	case KeyCtrlJ, KeyEnter:
-		l.typeEnter(r)
-	default:
-		l.appendRune(r)
-	}
-}
-
-func (l *Line) typeTab(b byte) {
-	fmt.Println("type tab: ", b)
-}
-
-func (l *Line) typeLeft(b byte) {
-	fmt.Println("type left: ", b)
-}
-
-func (l *Line) typeRight(b byte) {
-	fmt.Println("type right: ", b)
-}
-
-func (l *Line) typeDelete(b byte) {
-	if 0 < l.pos && l.pos <= len(l.buf) {
-		l.pos--
-		buf := make([]byte, len(l.buf)-1)
-		copy(buf, l.buf[:l.pos])
-		copy(buf[l.pos:], l.buf[l.pos+1:])
-		l.buf = buf
-	}
-}
-
-func (l *Line) typeEnter(b byte) {
-	line := string(l.buf)
-	l.buf = l.buf[:0]
-	select {
-	case l.line <- line:
-	case <-l.stopSignal:
-	}
-}
-
-func (l *Line) appendRune(b byte) {
-	//fmt.Println("type: ", b)
-	if l.pos < 0 || l.pos == len(l.buf) || l.pos > len(l.buf) {
-		l.buf = append(l.buf, b)
-		l.pos = len(l.buf)
-	} else {
-		buf := make([]byte, len(l.buf)+1)
-		copy(buf, l.buf[:l.pos])
-		buf[l.pos] = b
-		copy(buf[l.pos+1:], l.buf[l.pos:])
-		l.buf = buf
-		l.pos++
-	}
-
-}
-
-func (l *Line) Line() (string, error) {
-	select {
-	case <-l.stopSignal:
-		return "", ErrNotRunning
-	case line := <-l.line:
-		return line, nil
-	}
-}
-func (l *Line) stop() error {
-	fmt.Println("stop line")
-	close(l.line)
-	l.buf = l.buf[0:]
-	return nil
+	t.config.FuncExitRaw()
 }

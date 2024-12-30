@@ -53,6 +53,7 @@ func (commands *Commands) parse(args []string, required bool, flagValues FlagVal
 			cur = cur.FindChildren(args[0])
 		}
 		if cur == nil {
+			err = fmt.Errorf("illegal command '%s'", args[0])
 			break
 		}
 		command = cur

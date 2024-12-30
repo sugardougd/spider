@@ -67,8 +67,21 @@ func New(config *Config, commands *Commands) *Spider {
 }
 
 func (s *Spider) Run() error {
-	defer s.terminal.Stop()
-	//TODO
+	for s.IsRunning() {
+		select {
+		case cmd := <-s.terminal.Readline():
+			if err := s.RunCommand(cmd); err != nil {
+				fmt.Fprintf(s.Stderr(), "%v\n", err)
+			}
+			s.terminal.History.Push(cmd)
+			s.PrintPrompt()
+		case <-s.terminal.Done():
+			s.Stop()
+			break
+		case <-s.stopSignal:
+			break
+		}
+	}
 	return nil
 }
 
@@ -80,7 +93,8 @@ func (s *Spider) RunWithTerminal(terminal *terminal.Terminal) error {
 func (s *Spider) RunCommand(cmd string) error {
 	args := strings.Fields(cmd)
 	if len(args) == 0 {
-		return fmt.Errorf("illagel command '%s'", cmd)
+		//return fmt.Errorf("illegal command '%s'", cmd)
+		return nil
 	}
 	flagValues := make(FlagValues)
 	command, args, err := s.Commands.parse(args, true, flagValues)
@@ -119,10 +133,25 @@ func (s *Spider) AddCommand(cmd *Command) error {
 	return s.Commands.Add(cmd)
 }
 
+func (s *Spider) PrintPrompt() (int, error) {
+	return fmt.Fprintf(s.Stdout(), s.Config.Prompt)
+}
+
 func (s *Spider) Stop() error {
-	// TODO
 	close(s.stopSignal)
+	if s.terminal != nil {
+		s.terminal.Stop()
+	}
 	return nil
+}
+
+func (s *Spider) IsRunning() bool {
+	select {
+	case <-s.stopSignal:
+		return false
+	default:
+		return true
+	}
 }
 
 func (s *Spider) Stdin() io.ReadCloser {
