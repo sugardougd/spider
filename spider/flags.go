@@ -29,7 +29,7 @@ type FlagValue struct {
 
 type FlagValues map[string]*FlagValue
 
-func (flags *Flags) parse(command *Command, args []string, flagValues FlagValues) (remaining []string, err error) {
+func (flags *Flags) parse(command *Command, args []string, required bool, flagValues FlagValues) (remaining []string, err error) {
 	for len(args) > 0 {
 		name := args[0]
 		if !strings.HasPrefix(name, "-") {
@@ -50,7 +50,7 @@ func (flags *Flags) parse(command *Command, args []string, flagValues FlagValues
 			break
 		}
 		// find FlagParser
-		fullName := flag.fullName(command.fullName())
+		fullName := flag.fullName(command.FullName())
 		parser, ok := flags.parsers[flag.Long]
 		if ok {
 			var flagValue *FlagValue
@@ -65,11 +65,11 @@ func (flags *Flags) parse(command *Command, args []string, flagValues FlagValues
 
 	// check require argument and set the default values
 	for _, flag := range flags.list {
-		fullName := flag.fullName(command.fullName())
+		fullName := flag.fullName(command.FullName())
 		if _, ok := flagValues[fullName]; ok {
 			continue
 		}
-		if flag.Require {
+		if flag.Require && required {
 			err = fmt.Errorf("missing flag '-%s'", flag.Short)
 			break
 		}
@@ -226,4 +226,57 @@ func parseStringFlag(flag, value string, found bool, args []string) (*FlagValue,
 		value:     vStr,
 		isDefault: false,
 	}, args, nil
+}
+
+// Bool parent is Command FullName
+func (flags FlagValues) Bool(parent, long string) (bool, error) {
+	fullName := parent + "." + long
+	flagVal := flags[fullName]
+	if flagVal == nil {
+		return false, fmt.Errorf("missing flag value: flag '%s' not registered", long)
+	}
+	v, ok := flagVal.value.(bool)
+	if !ok {
+		return false, fmt.Errorf("failed to assert flag '%s' to bool", long)
+	}
+	return v, nil
+}
+
+func (flags FlagValues) Int(parent, long string) (int, error) {
+	fullName := parent + "." + long
+	flagVal := flags[fullName]
+	if flagVal == nil {
+		return 0, fmt.Errorf("missing flag value: flag '%s' not registered", long)
+	}
+	v, ok := flagVal.value.(int)
+	if !ok {
+		return 0, fmt.Errorf("failed to assert flag '%s' to int", long)
+	}
+	return v, nil
+}
+
+func (flags FlagValues) Float64(parent, long string) (float64, error) {
+	fullName := parent + "." + long
+	flagVal := flags[fullName]
+	if flagVal == nil {
+		return 0, fmt.Errorf("missing flag value: flag '%s' not registered", long)
+	}
+	v, ok := flagVal.value.(float64)
+	if !ok {
+		return 0, fmt.Errorf("failed to assert flag '%s' to float64", long)
+	}
+	return v, nil
+}
+
+func (flags FlagValues) String(parent, long string) (string, error) {
+	fullName := parent + "." + long
+	flagVal := flags[fullName]
+	if flagVal == nil {
+		return "", fmt.Errorf("missing flag value: flag '%s' not registered", long)
+	}
+	v, ok := flagVal.value.(string)
+	if !ok {
+		return "", fmt.Errorf("failed to assert flag '%s' to string", long)
+	}
+	return v, nil
 }

@@ -9,25 +9,46 @@ import (
 )
 
 type Spider struct {
-	config     *Config
-	commands   Commands
+	Config     *Config
+	Commands   Commands
 	stopSignal chan struct{}
 	terminal   *terminal.Terminal
 }
 
 func New(config *Config, commands *Commands) *Spider {
 	s := Spider{
-		config:     config,
+		Config:     config,
 		stopSignal: make(chan struct{}),
 	}
-	// Add general builtin commands. help exit
+	// Add general builtin Commands. help exit
 	s.AddCommand(&Command{
 		Name:        "help",
 		Description: "use 'help [command]' for command help",
 		Usage:       "use 'help [command]' for command usage",
 		builtin:     true,
+		Args: func(args *Args) {
+			args.StringList(&Arg{
+				Name: "command",
+				Help: "the name of the command",
+			})
+		},
 		Run: func(c *Context) error {
-			c.Spider.Printf("exec '%s'\n", c.Command.Name)
+			args, err := c.ArgValues.StringList("command")
+			if err != nil {
+				return err
+			}
+			if len(args) == 0 {
+				c.Spider.PrintHelp()
+				return nil
+			}
+			flagValues := make(FlagValues)
+			command, _, err := c.Spider.Commands.parse(args, false, flagValues)
+			if err != nil {
+				return err
+			} else if command == nil {
+				return fmt.Errorf("command not found")
+			}
+			c.Spider.PrintCommandHelp(command)
 			return nil
 		},
 	})
@@ -62,7 +83,7 @@ func (s *Spider) RunCommand(cmd string) error {
 		return fmt.Errorf("illagel command '%s'", cmd)
 	}
 	flagValues := make(FlagValues)
-	command, args, err := s.commands.Parse(args, flagValues)
+	command, args, err := s.Commands.parse(args, true, flagValues)
 	if err != nil {
 		return err
 	}
@@ -72,12 +93,18 @@ func (s *Spider) RunCommand(cmd string) error {
 	if err != nil {
 		return err
 	}
+
+	// Check, if values from the argument string are not consumed (and therefore invalid).
+	if len(args) > 0 {
+		return fmt.Errorf("invalid usage of command '%s' (unconsumed input '%s'), try 'help'", command.Name, strings.Join(args, " "))
+	}
+
 	context := &Context{
 		Spider:     s,
 		Command:    command,
 		CommandStr: cmd,
-		flagValues: flagValues,
-		argValues:  argValues,
+		FlagValues: flagValues,
+		ArgValues:  argValues,
 	}
 	if command.Run == nil {
 		return fmt.Errorf("illagel command Run '%s'", command.Name)
@@ -89,7 +116,7 @@ func (s *Spider) RunCommand(cmd string) error {
 }
 
 func (s *Spider) AddCommand(cmd *Command) error {
-	return s.commands.Add(cmd)
+	return s.Commands.Add(cmd)
 }
 
 func (s *Spider) Stop() error {
@@ -133,4 +160,33 @@ func (s *Spider) Printf(format string, args ...interface{}) (int, error) {
 
 func (s *Spider) Println(args ...interface{}) (int, error) {
 	return fmt.Fprintln(s, args...)
+}
+
+func (s *Spider) PrintHelp() {
+	s.Println()
+	s.Println(s.Config.Description)
+	s.Println()
+	s.Println("Commands:")
+	for _, command := range s.Commands.list {
+		s.Println("\t" + command.Name + "\t" + command.Description)
+	}
+}
+
+func (s *Spider) PrintCommandHelp(command *Command) {
+	s.Println()
+	s.Println(command.Description)
+	s.Println("Usage:")
+	s.Println("\t" + command.Usage)
+	s.Println("Flags:")
+	for _, flag := range command.flags.list {
+		s.Println("\t", "-"+flag.Short, "--"+flag.Long, "\t"+flag.Help)
+	}
+	s.Println("Args:")
+	for _, arg := range command.args.list {
+		s.Println("\t", arg.Name, arg.Help)
+	}
+	s.Println("Sub Commands:")
+	for _, sub := range command.Children.list {
+		s.Println("\t" + sub.Name + "\t" + sub.Description)
+	}
 }

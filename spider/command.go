@@ -43,7 +43,7 @@ func (commands *Commands) Find(name string) *Command {
 	return nil
 }
 
-func (commands *Commands) Parse(args []string, flagValues FlagValues) (command *Command, remaining []string, err error) {
+func (commands *Commands) parse(args []string, required bool, flagValues FlagValues) (command *Command, remaining []string, err error) {
 	cur := command
 	for len(args) > 0 {
 		// find command
@@ -58,7 +58,7 @@ func (commands *Commands) Parse(args []string, flagValues FlagValues) (command *
 		command = cur
 		args = args[1:]
 		// parse flags
-		args, err = command.flags.parse(command, args, flagValues)
+		args, err = command.flags.parse(command, args, required, flagValues)
 		if err != nil {
 			break
 		}
@@ -98,6 +98,13 @@ func (command *Command) RegisterFlags(flag func(c *Command, f *Flags) error) err
 	return flag(command, &command.flags)
 }
 
+func (command *Command) FullName() string {
+	if command.Parent != nil {
+		return command.Parent.FullName() + "." + command.Name
+	}
+	return command.Name
+}
+
 func (command *Command) registerFlags() {
 	if command.Flags != nil {
 		command.Flags(&command.flags)
@@ -108,13 +115,6 @@ func (command *Command) registerArgs() {
 	if command.Args != nil {
 		command.Args(&command.args)
 	}
-}
-
-func (command *Command) fullName() string {
-	if command.Parent != nil {
-		return command.Parent.fullName() + "." + command.Name
-	}
-	return command.Name
 }
 
 func (command *Command) validate() error {
