@@ -42,9 +42,9 @@ func TestMockTerminal() {
 	ter := terminal.New(&config)
 	go func() {
 		stdio.in <- byte('1')
-		stdio.in <- terminal.KeyEnter
+		stdio.in <- terminal.CharEnter
 		stdio.in <- byte('2')
-		stdio.in <- terminal.KeyEnter
+		stdio.in <- terminal.CharEnter
 	}()
 	go func() {
 		for {

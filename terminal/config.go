@@ -7,14 +7,15 @@ import (
 )
 
 type Config struct {
-	Prompt      string // eg: root > <command>
-	Stdin       io.ReadCloser
-	Stdout      io.Writer
-	Stderr      io.Writer
-	IsTerminal  bool // use interactive or not
-	FuncMakeRaw func() error
-	FuncExitRaw func() error
-	once        sync.Once
+	Prompt         string // eg: root > <command>
+	Stdin          io.ReadCloser
+	Stdout         io.Writer
+	Stderr         io.Writer
+	FuncIsTerminal func() bool // use interactive or not
+	FuncMakeRaw    func() error
+	FuncExitRaw    func() error
+	FuncGetWidth   func() int
+	once           sync.Once
 }
 
 func (config *Config) Init() {
@@ -28,12 +29,18 @@ func (config *Config) Init() {
 		if config.Stderr == nil {
 			config.Stderr = os.Stderr
 		}
+		if config.FuncIsTerminal == nil {
+			config.FuncIsTerminal = DefaultIsTerminal
+		}
 		rm := new(RawMode)
 		if config.FuncMakeRaw == nil {
 			config.FuncMakeRaw = rm.Enter
 		}
 		if config.FuncExitRaw == nil {
 			config.FuncExitRaw = rm.Exit
+		}
+		if config.FuncGetWidth == nil {
+			config.FuncGetWidth = GetScreenWidth
 		}
 	})
 }

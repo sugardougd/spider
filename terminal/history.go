@@ -24,10 +24,8 @@ func (h *History) Push(s string) {
 	}
 	elem := h.history.PushBack(s)
 	h.current = elem
-	for h.history.Len() > h.limit {
-		if e := h.history.Back(); e != nil {
-			h.history.Remove(e)
-		}
+	for h.history.Len() > h.limit && h.history.Len() > 0 {
+		h.history.Remove(h.history.Front())
 	}
 }
 

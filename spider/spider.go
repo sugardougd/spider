@@ -73,7 +73,6 @@ func (s *Spider) Run() error {
 			if err := s.RunCommand(cmd); err != nil {
 				fmt.Fprintf(s.Stderr(), "%v\n", err)
 			}
-			s.terminal.History.Push(cmd)
 			s.PrintPrompt()
 		case <-s.terminal.Done():
 			s.Stop()
