@@ -2,6 +2,7 @@ package spider
 
 import (
 	"fmt"
+	"strings"
 )
 
 type CommandsFunc func() *Commands
@@ -34,13 +35,30 @@ func (commands *Commands) Find(name string) *Command {
 		if command.Name == name {
 			return command
 		}
-		for _, a := range command.Aliases {
-			if a == name {
+		for _, alias := range command.Aliases {
+			if alias == name {
 				return command
 			}
 		}
 	}
 	return nil
+}
+
+func (commands *Commands) MatchPrefix(prefix string) []*Command {
+	var match []*Command
+	for _, command := range commands.list {
+		if strings.HasPrefix(command.Name, prefix) {
+			match = append(match, command)
+			continue
+		}
+		for _, alias := range command.Aliases {
+			if strings.HasPrefix(alias, prefix) {
+				match = append(match, command)
+				break
+			}
+		}
+	}
+	return match
 }
 
 func (commands *Commands) parse(args []string, required bool, flagValues FlagValues) (command *Command, remaining []string, err error) {
@@ -53,7 +71,6 @@ func (commands *Commands) parse(args []string, required bool, flagValues FlagVal
 			cur = cur.FindChildren(args[0])
 		}
 		if cur == nil {
-			err = fmt.Errorf("illegal command '%s'", args[0])
 			break
 		}
 		command = cur

@@ -4,21 +4,24 @@ import (
 	"fmt"
 	"os"
 	"spider/spider"
-	"spider/terminal"
 )
 
 func main() {
+	RunConsole()
+}
+
+func RunConsole() {
 	s := spider.New(&spider.Config{
 		Name:        "spider",
 		Description: "spider is a tool to list and diagnose Go processes",
 		Prompt:      "spider > ",
 	}, spider.NewCommands(testCommand()))
-	if err := s.RunWithTerminal(terminal.NewConsole(s.Config.Prompt)); err != nil {
+	if err := s.RunConsole(); err != nil {
 		fmt.Println("run spider fail", err.Error())
 	}
 }
 
-func runCommand() {
+func RunCommand() {
 	s := spider.New(&spider.Config{
 		Name:        "spider",
 		Description: "spider is a tool to list and diagnose Go processes",

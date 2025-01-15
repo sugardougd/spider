@@ -35,7 +35,6 @@ func (flags *Flags) parse(command *Command, args []string, required bool, flagVa
 		if !strings.HasPrefix(name, "-") {
 			break
 		}
-		args = args[1:]
 		// find flag
 		pos := strings.Index(name, "=")
 		value := ""
@@ -49,6 +48,7 @@ func (flags *Flags) parse(command *Command, args []string, required bool, flagVa
 		if flag == nil {
 			break
 		}
+		args = args[1:]
 		// find FlagParser
 		fullName := flag.fullName(command.FullName())
 		parser, ok := flags.parsers[flag.Long]
@@ -88,6 +88,16 @@ func (flags *Flags) Find(f string) *Flag {
 		}
 	}
 	return nil
+}
+
+func (flags *Flags) MatchPrefix(f string) []*Flag {
+	var match []*Flag
+	for _, flag := range flags.list {
+		if flag.matchPrefix(f) {
+			match = append(match, flag)
+		}
+	}
+	return match
 }
 
 func (flags *Flags) register(flag *Flag, fp FlagParser) error {
@@ -134,6 +144,11 @@ func (flags *Flags) String(flag *Flag) error {
 func (flag *Flag) match(f string) bool {
 	return (len(flag.Short) > 0 && f == "-"+flag.Short) ||
 		(len(flag.Long) > 0 && f == "--"+flag.Long)
+}
+
+func (flag *Flag) matchPrefix(f string) bool {
+	return (len(flag.Short) > 0 && strings.HasPrefix("-"+flag.Short, f)) ||
+		(len(flag.Long) > 0 && strings.HasPrefix("--"+flag.Long, f))
 }
 
 func (flag *Flag) fullName(parent string) string {

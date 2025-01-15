@@ -2,9 +2,9 @@ package spider
 
 import (
 	"fmt"
+	"golang.org/x/term"
 	"io"
 	"os"
-	"spider/terminal"
 	"strings"
 )
 
@@ -12,7 +12,7 @@ type Spider struct {
 	Config     *Config
 	Commands   Commands
 	stopSignal chan struct{}
-	terminal   *terminal.Terminal
+	terminal   *term.Terminal
 }
 
 func New(config *Config, commands *Commands) *Spider {
@@ -66,39 +66,43 @@ func New(config *Config, commands *Commands) *Spider {
 	return &s
 }
 
-func (s *Spider) Run() error {
+func (s *Spider) runWithTerminal(terminal *term.Terminal) error {
+	s.terminal = terminal
+	s.terminal.AutoCompleteCallback = s.autoComplete
+	return s.run()
+}
+
+func (s *Spider) run() error {
 	for s.IsRunning() {
 		select {
-		case cmd := <-s.terminal.Readline():
-			if err := s.RunCommand(cmd); err != nil {
-				fmt.Fprintf(s.Stderr(), "%v\n", err)
-			}
-			s.PrintPrompt()
-		case <-s.terminal.Done():
-			s.Stop()
-			break
 		case <-s.stopSignal:
 			break
+		default:
+			cmd, err := s.terminal.ReadLine()
+			if err != nil {
+				s.Stop()
+				break
+			}
+			if err := s.RunCommand(cmd); err != nil {
+				fmt.Fprintf(s, "%v\n", err)
+			}
 		}
 	}
 	return nil
 }
 
-func (s *Spider) RunWithTerminal(terminal *terminal.Terminal) error {
-	s.terminal = terminal
-	return s.Run()
-}
-
 func (s *Spider) RunCommand(cmd string) error {
 	args := strings.Fields(cmd)
 	if len(args) == 0 {
-		//return fmt.Errorf("illegal command '%s'", cmd)
 		return nil
 	}
 	flagValues := make(FlagValues)
 	command, args, err := s.Commands.parse(args, true, flagValues)
 	if err != nil {
 		return err
+	}
+	if command == nil {
+		return fmt.Errorf("illegal command '%s'", args[0])
 	}
 	// parse args
 	argValues := make(ArgValues)
@@ -132,15 +136,8 @@ func (s *Spider) AddCommand(cmd *Command) error {
 	return s.Commands.Add(cmd)
 }
 
-func (s *Spider) PrintPrompt() (int, error) {
-	return fmt.Fprintf(s.Stdout(), s.Config.Prompt)
-}
-
 func (s *Spider) Stop() error {
 	close(s.stopSignal)
-	if s.terminal != nil {
-		s.terminal.Stop()
-	}
 	return nil
 }
 
@@ -153,29 +150,11 @@ func (s *Spider) IsRunning() bool {
 	}
 }
 
-func (s *Spider) Stdin() io.ReadCloser {
-	if s.terminal != nil {
-		return s.terminal.Stdin()
-	}
-	return os.Stdin
-}
-
-func (s *Spider) Stdout() io.Writer {
-	if s.terminal != nil {
-		return s.terminal.Stdout()
-	}
-	return os.Stdout
-}
-
-func (s *Spider) Stderr() io.Writer {
-	if s.terminal != nil {
-		return s.terminal.Stderr()
-	}
-	return os.Stderr
-}
-
 func (s *Spider) Write(p []byte) (n int, err error) {
-	return s.Stdout().Write(p)
+	if s.terminal != nil {
+		return s.terminal.Write(p)
+	}
+	return os.Stdout.Write(p)
 }
 
 func (s *Spider) Print(args ...interface{}) (int, error) {
@@ -217,4 +196,17 @@ func (s *Spider) PrintCommandHelp(command *Command) {
 	for _, sub := range command.Children.list {
 		s.Println("\t" + sub.Name + "\t" + sub.Description)
 	}
+}
+
+type ReadWriter struct {
+	Reader io.Reader
+	Writer io.Writer
+}
+
+func (c *ReadWriter) Read(p []byte) (n int, err error) {
+	return c.Reader.Read(p)
+}
+
+func (c *ReadWriter) Write(p []byte) (n int, err error) {
+	return c.Writer.Write(p)
 }
