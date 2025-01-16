@@ -1,23 +1,30 @@
 package spider
 
 import (
-	"fmt"
+	"context"
 	"golang.org/x/term"
 	"os"
 )
 
-func (s *Spider) RunConsole() error {
-	terminal := term.NewTerminal(&ReadWriter{
-		Reader: os.Stdin,
-		Writer: os.Stdout,
-	}, s.Config.Prompt)
-
+func RunConsole(config *Config, commands *Commands, ctx context.Context) error {
 	fd := int(os.Stdout.Fd())
 	raw, err := term.MakeRaw(fd)
 	if err != nil {
-		fmt.Printf("failed to get terminal state from MakeRaw: %s", err)
 		return err
 	}
 	defer term.Restore(fd, raw)
-	return s.runWithTerminal(terminal)
+
+	s := New(config, commands)
+	go s.runWithTerminal(term.NewTerminal(&ReadWriter{
+		Reader: os.Stdin,
+		Writer: os.Stdout,
+	}, config.Prompt))
+
+	select {
+	case <-ctx.Done():
+		s.Stop()
+	case <-s.stopSignal:
+		break
+	}
+	return nil
 }

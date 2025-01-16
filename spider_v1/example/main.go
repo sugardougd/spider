@@ -54,7 +54,7 @@ func RunSSH() {
 		Address:      ":4322",
 		NoClientAuth: true,
 		Banner:       "welcome to spider_v1!\r\n",
-		PrivateFile:  "ssh/spider_v1",
+		PrivateFile:  "ssh/spider",
 		PasswordFunc: func(user, password string) bool {
 			return "admin" == user && "admin" == password
 		},

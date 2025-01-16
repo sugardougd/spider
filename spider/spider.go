@@ -11,6 +11,8 @@ import (
 type Spider struct {
 	Config     *Config
 	Commands   Commands
+	ExitRun    func() error
+	StopHook   func() error
 	stopSignal chan struct{}
 	terminal   *term.Terminal
 }
@@ -84,7 +86,7 @@ func (s *Spider) run() error {
 				break
 			}
 			if err := s.RunCommand(cmd); err != nil {
-				fmt.Fprintf(s, "%v\n", err)
+				s.Printf("%v\n", err)
 			}
 		}
 	}
@@ -126,10 +128,7 @@ func (s *Spider) RunCommand(cmd string) error {
 	if command.Run == nil {
 		return fmt.Errorf("illagel command Run '%s'", command.Name)
 	}
-	if err = command.Run(context); err != nil {
-		return err
-	}
-	return nil
+	return command.Run(context)
 }
 
 func (s *Spider) AddCommand(cmd *Command) error {
