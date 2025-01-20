@@ -83,7 +83,7 @@ func handleSSHChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config
 	defer channel.Close()
 	go handleSSHChannelRequests(sshConn, reqs)
 	s := New(config, commands)
-	s.runWithTerminal(term.NewTerminal(channel, config.Prompt))
+	s.RunWithTerminal(term.NewTerminal(channel, config.Prompt))
 }
 
 func handleSSHChannelRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request) {

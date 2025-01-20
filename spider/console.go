@@ -15,7 +15,7 @@ func RunConsole(config *Config, commands *Commands, ctx context.Context) error {
 	defer term.Restore(fd, raw)
 
 	s := New(config, commands)
-	go s.runWithTerminal(term.NewTerminal(&ReadWriter{
+	go s.RunWithTerminal(term.NewTerminal(&ReadWriter{
 		Reader: os.Stdin,
 		Writer: os.Stdout,
 	}, config.Prompt))

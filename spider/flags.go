@@ -16,7 +16,7 @@ type Flags struct {
 type Flag struct {
 	Short   string
 	Long    string
-	Help    string // help message for the flag.
+	Help    string // help message for the flag. required
 	Usage   string // define how to use the flag.
 	Require bool
 	Default interface{}

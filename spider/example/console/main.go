@@ -14,9 +14,9 @@ func main() {
 		Description: "spider is a tool to list and diagnose Go processes",
 		Prompt:      "spider > ",
 	}
-	commands := spider.NewCommands(commands.TestCommand())
+	commands := spider.NewCommands(commands.TestCommand(), spider.NoyaCommand())
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
 	if err := spider.RunConsole(config, commands, ctx); err != nil {
 		fmt.Println("exit spider", err.Error())
 	}

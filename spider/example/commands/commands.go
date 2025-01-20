@@ -135,6 +135,6 @@ func TestCommand() *spider.Command {
 			return context.Command.Parent.Run(context)
 		},
 	}
-	cmd.AddChildren(subCmd)
+	cmd.AddCommand(subCmd)
 	return cmd
 }

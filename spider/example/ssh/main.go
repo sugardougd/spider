@@ -25,7 +25,7 @@ func main() {
 			return "admin" == user && "admin" == password
 		},
 	}
-	commands := spider.NewCommands(commands.TestCommand())
+	commands := spider.NewCommands(commands.TestCommand(), spider.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
 	if err := spider.RunSSH(config, commands, ctx); err != nil {

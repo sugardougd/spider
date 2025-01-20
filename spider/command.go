@@ -100,7 +100,7 @@ type Command struct {
 	builtin     bool // Whenever this is a build-in command not added by the user.
 }
 
-func (command *Command) AddChildren(cmd *Command) error {
+func (command *Command) AddCommand(cmd *Command) error {
 	err := command.Children.Add(cmd)
 	if err == nil {
 		cmd.Parent = command

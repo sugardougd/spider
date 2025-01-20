@@ -11,8 +11,6 @@ import (
 type Spider struct {
 	Config     *Config
 	Commands   Commands
-	ExitRun    func() error
-	StopHook   func() error
 	stopSignal chan struct{}
 	terminal   *term.Terminal
 }
@@ -68,7 +66,7 @@ func New(config *Config, commands *Commands) *Spider {
 	return &s
 }
 
-func (s *Spider) runWithTerminal(terminal *term.Terminal) error {
+func (s *Spider) RunWithTerminal(terminal *term.Terminal) error {
 	s.terminal = terminal
 	s.terminal.AutoCompleteCallback = s.autoComplete
 	return s.run()

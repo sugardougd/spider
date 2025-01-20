@@ -41,5 +41,5 @@ func handleTCPConnection(conn net.Conn, config *TCPConfig, commands *Commands) {
 	defer conn.Close()
 	fmt.Printf("[%s]New TCP connection\r\n", conn.RemoteAddr())
 	s := New(config.Config, commands)
-	s.runWithTerminal(term.NewTerminal(conn, config.Prompt))
+	s.RunWithTerminal(term.NewTerminal(conn, config.Prompt))
 }
