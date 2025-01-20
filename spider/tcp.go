@@ -7,12 +7,7 @@ import (
 	"net"
 )
 
-type TCPConfig struct {
-	*Config
-	Address string // 监听地址 IP:PORT
-}
-
-func RunTCP(config *TCPConfig, commands *Commands, ctx context.Context) error {
+func RunTCP(config *Config, commands *Commands, ctx context.Context) error {
 	listener, err := net.Listen("tcp", config.Address)
 	if err != nil {
 		return err
@@ -26,7 +21,7 @@ func RunTCP(config *TCPConfig, commands *Commands, ctx context.Context) error {
 	}
 }
 
-func acceptTCPConnection(listener net.Listener, config *TCPConfig, commands *Commands) {
+func acceptTCPConnection(listener net.Listener, config *Config, commands *Commands) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -37,9 +32,9 @@ func acceptTCPConnection(listener net.Listener, config *TCPConfig, commands *Com
 	}
 }
 
-func handleTCPConnection(conn net.Conn, config *TCPConfig, commands *Commands) {
+func handleTCPConnection(conn net.Conn, config *Config, commands *Commands) {
 	defer conn.Close()
 	fmt.Printf("[%s]New TCP connection\r\n", conn.RemoteAddr())
-	s := New(config.Config, commands)
+	s := New(config, commands)
 	s.RunWithTerminal(term.NewTerminal(conn, config.Prompt))
 }

@@ -9,11 +9,10 @@ import (
 )
 
 func main() {
-	config := &spider.Config{
-		Name:        "spider",
-		Description: "spider is a tool to list and diagnose Go processes",
-		Prompt:      "spider > ",
-	}
+	config := spider.NewConfig(
+		spider.ConfigName("spider"),
+		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
+		spider.ConfigPrompt("spider > "))
 	commands := spider.NewCommands(commands.TestCommand(), spider.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
