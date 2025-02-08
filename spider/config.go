@@ -73,3 +73,9 @@ func NewConfig(optional ...ConfigOptional) *Config {
 	}
 	return &Config{*option}
 }
+
+func (c *Config) Option(optional ...ConfigOptional) {
+	for _, o := range optional {
+		o(&c.ConfigOption)
+	}
+}

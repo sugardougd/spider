@@ -1,32 +1,35 @@
-package spider
+package commands
 
 import (
 	"fmt"
 	"math/rand"
+	"spider/spider"
 	"time"
 )
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func NoyaCommand() *Command {
-	noya := &Command{
+func NoyaCommand() *spider.Command {
+	noya := &spider.Command{
 		Name:        "noya",
 		Description: "noya tools",
-		Run: func(c *Context) error {
+		Usage:       "noya...",
+		Run: func(c *spider.Context) error {
 			c.Spider.PrintCommandHelp(c.Command)
 			return nil
 		},
 	}
 	// add
-	add := &Command{
+	add := &spider.Command{
 		Name:        "math-add",
 		Description: "displays math-add problem",
-		Flags: func(f *Flags) {
-			f.Int(&Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
-			f.Int(&Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
-			f.Int(&Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
+		Usage:       "noya math-add",
+		Flags: func(f *spider.Flags) {
+			f.Int(&spider.Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
+			f.Int(&spider.Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
+			f.Int(&spider.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
 		},
-		Run: func(c *Context) error {
+		Run: func(c *spider.Context) error {
 			fullName := c.Command.FullName()
 			low, err := c.FlagValues.Int(fullName, "low")
 			if err != nil {
@@ -49,15 +52,16 @@ func NoyaCommand() *Command {
 		},
 	}
 	// aub
-	sub := &Command{
+	sub := &spider.Command{
 		Name:        "math-sub",
 		Description: "displays math-sub problem",
-		Flags: func(f *Flags) {
-			f.Int(&Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
-			f.Int(&Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
-			f.Int(&Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
+		Usage:       "noya math-sub",
+		Flags: func(f *spider.Flags) {
+			f.Int(&spider.Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
+			f.Int(&spider.Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
+			f.Int(&spider.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
 		},
-		Run: func(c *Context) error {
+		Run: func(c *spider.Context) error {
 			fullName := c.Command.FullName()
 			low, err := c.FlagValues.Int(fullName, "low")
 			if err != nil {
@@ -80,15 +84,16 @@ func NoyaCommand() *Command {
 		},
 	}
 	// add & sub
-	addSub := &Command{
+	addSub := &spider.Command{
 		Name:        "math-add-sub",
 		Description: "displays math-add & math-sub problem",
-		Flags: func(f *Flags) {
-			f.Int(&Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
-			f.Int(&Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
-			f.Int(&Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
+		Usage:       "noya math-add-sub",
+		Flags: func(f *spider.Flags) {
+			f.Int(&spider.Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
+			f.Int(&spider.Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
+			f.Int(&spider.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
 		},
-		Run: func(c *Context) error {
+		Run: func(c *spider.Context) error {
 			fullName := c.Command.FullName()
 			low, err := c.FlagValues.Int(fullName, "low")
 			if err != nil {

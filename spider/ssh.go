@@ -1,7 +1,9 @@
 package spider
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
@@ -74,18 +76,32 @@ func handleSSHChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config
 		fmt.Printf("Could not accept channel: %v\r\n", err)
 		return
 	}
-	defer channel.Close()
-	go handleSSHChannelRequests(sshConn, reqs)
 	s := New(config, commands)
+	defer channel.Close()
+	go handleSSHChannelRequests(sshConn, reqs, func(width, height int) {
+		s.SetSize(width, height)
+	})
 	s.RunWithTerminal(term.NewTerminal(channel, config.Prompt))
 }
 
-func handleSSHChannelRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request) {
+func handleSSHChannelRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request, windowChanged func(width, height int)) {
 	for req := range reqs {
 		fmt.Printf("[%s@%s]Received channel request: %s %t\r\n", sshConn.User(), sshConn.RemoteAddr(), req.Type, req.WantReply)
 		switch req.Type {
 		case "pty-req", "shell":
 			req.Reply(true, nil)
+			break
+		case "window-change":
+			req.Reply(false, nil)
+			payload := bytes.NewReader(req.Payload)
+			// 0:width; 1:height; 2:widthPixels; 3:heightPixels
+			windows := [4]int32{}
+			for index := 0; index < len(windows); index++ {
+				binary.Read(payload, binary.BigEndian, &windows[index])
+			}
+			if windows[0] > 0 && windows[1] > 0 {
+				windowChanged(int(windows[0]), int(windows[1]))
+			}
 			break
 		default:
 			req.Reply(false, nil)

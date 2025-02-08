@@ -14,7 +14,7 @@ func main() {
 		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
 		spider.ConfigPrompt("spider > "),
 		spider.ConfigAddress(":8080"))
-	commands := spider.NewCommands(commands.TestCommand(), spider.NoyaCommand())
+	commands := spider.NewCommands(commands.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
 	if err := spider.RunTCP(config, commands, ctx); err != nil {

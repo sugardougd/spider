@@ -13,7 +13,6 @@
 package terminal
 
 import (
-	"io"
 	"syscall"
 	"unsafe"
 )
@@ -23,22 +22,6 @@ type Termios syscall.Termios
 // State contains the state of a terminal.
 type State struct {
 	termios Termios
-}
-
-// GetSize returns the dimensions of the given terminal.
-func GetSize(fd int) (int, int, error) {
-	var dimensions [4]uint16
-	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, uintptr(fd), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&dimensions)), 0, 0, 0)
-	if err != 0 {
-		return 0, 0, err
-	}
-	return int(dimensions[1]), int(dimensions[0]), nil
-}
-
-// IsTerminal returns true if the given file descriptor is a terminal.
-func IsTerminal(fd int) bool {
-	_, err := getTermios(fd)
-	return err == nil
 }
 
 func getTermios(fd int) (*Termios, error) {
@@ -85,64 +68,21 @@ func MakeRaw(fd int) (*State, error) {
 	return &oldState, setTermios(fd, &newState)
 }
 
-// GetState returns the current state of a terminal which may be useful to
-// restore the terminal after a signal.
-func GetState(fd int) (*State, error) {
-	termios, err := getTermios(fd)
+func Restore(fd int, state *State) error {
+	err := restore(fd, state)
 	if err != nil {
-		return nil, err
+		// errno 0 means everything is ok :)
+		if err.Error() == "errno 0" {
+			return nil
+		} else {
+			return err
+		}
 	}
-
-	return &State{termios: *termios}, nil
+	return nil
 }
 
 // Restore restores the terminal connected to the given file descriptor to a
 // previous state.
-func restoreTerm(fd int, state *State) error {
+func restore(fd int, state *State) error {
 	return setTermios(fd, &state.termios)
-}
-
-// ReadPassword reads a line of input from a terminal without local echo.  This
-// is commonly used for inputting passwords and other sensitive data. The slice
-// returned does not include the \n.
-func ReadPassword(fd int) ([]byte, error) {
-	oldState, err := getTermios(fd)
-	if err != nil {
-		return nil, err
-	}
-
-	newState := oldState
-	newState.Lflag &^= syscall.ECHO
-	newState.Lflag |= syscall.ICANON | syscall.ISIG
-	newState.Iflag |= syscall.ICRNL
-	if err := setTermios(fd, newState); err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		setTermios(fd, oldState)
-	}()
-
-	var buf [16]byte
-	var ret []byte
-	for {
-		n, err := syscall.Read(fd, buf[:])
-		if err != nil {
-			return nil, err
-		}
-		if n == 0 {
-			if len(ret) == 0 {
-				return nil, io.EOF
-			}
-			break
-		}
-		if buf[n-1] == '\n' {
-			n--
-		}
-		ret = append(ret, buf[:n]...)
-		if n < len(buf) {
-			break
-		}
-	}
-	return ret, nil
 }

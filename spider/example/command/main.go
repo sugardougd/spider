@@ -12,10 +12,10 @@ func main() {
 		spider.ConfigName("spider"),
 		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
 		spider.ConfigPrompt("spider > "))
-	s := spider.New(config, spider.NewCommands(commands.TestCommand()))
+	s := spider.New(config, spider.NewCommands(commands.NoyaCommand(), commands.TestCommand()))
 	cmd := []string{
-		//"help",
-		"help test",
+		"help",
+		//"help test",
 		//"test",
 		//"test -a -b 1 -c 1.1 -d 1 false 2 3 4",
 		//"test --aaa --bbb 1 --ccc 1.1 --ddd 1 true 2 3 4",

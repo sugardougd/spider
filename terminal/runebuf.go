@@ -17,12 +17,11 @@ type RuneBuffer struct {
 	sync.Mutex
 }
 
-func NewRuneBuffer(config *Config) *RuneBuffer {
+func NewRuneBuffer(prompt string, rw io.Writer, interactive bool) *RuneBuffer {
 	rb := RuneBuffer{
-		prompt:      []rune(config.Prompt),
-		writer:      config.Stdout,
-		width:       config.FuncGetWidth(),
-		interactive: config.FuncIsTerminal(),
+		prompt:      []rune(prompt),
+		writer:      rw,
+		interactive: interactive,
 	}
 	return &rb
 }
@@ -80,18 +79,18 @@ func (r *RuneBuffer) Backspace() {
 	})
 }
 
-func (r *RuneBuffer) Refresh(f func(buf *RuneBuffer)) {
+func (r *RuneBuffer) Refresh(refresh func(buf *RuneBuffer)) {
 	r.Lock()
 	defer r.Unlock()
 	if !r.interactive {
-		if f != nil {
-			f(r)
+		if refresh != nil {
+			refresh(r)
 		}
 		return
 	}
 	r.clean()
-	if f != nil {
-		f(r)
+	if refresh != nil {
+		refresh(r)
 	}
 	r.print()
 }

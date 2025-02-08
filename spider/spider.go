@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"text/tabwriter"
 )
 
 type Spider struct {
@@ -21,45 +22,10 @@ func New(config *Config, commands *Commands) *Spider {
 		stopSignal: make(chan struct{}),
 	}
 	// Add general builtin Commands. help exit
-	s.AddCommand(&Command{
-		Name:        "help",
-		Description: "use 'help [command]' for command help",
-		Usage:       "use 'help [command]' for command usage",
-		builtin:     true,
-		Args: func(args *Args) {
-			args.StringList(&Arg{
-				Name: "command",
-				Help: "the name of the command",
-			})
-		},
-		Run: func(c *Context) error {
-			args, err := c.ArgValues.StringList("command")
-			if err != nil {
-				return err
-			}
-			if len(args) == 0 {
-				c.Spider.PrintHelp()
-				return nil
-			}
-			flagValues := make(FlagValues)
-			command, _, err := c.Spider.Commands.parse(args, false, flagValues)
-			if err != nil {
-				return err
-			} else if command == nil {
-				return fmt.Errorf("command not found")
-			}
-			c.Spider.PrintCommandHelp(command)
-			return nil
-		},
-	})
-	s.AddCommand(&Command{
-		Name:        "exit",
-		Description: "exit the spider",
-		builtin:     true,
-		Run: func(c *Context) error {
-			return c.Stop()
-		},
-	})
+	s.AddCommand(helpCommand())
+	s.AddCommand(spiderCommand())
+	s.AddCommand(exitCommand())
+
 	for _, cmd := range commands.list {
 		s.AddCommand(cmd)
 	}
@@ -166,32 +132,47 @@ func (s *Spider) Println(args ...interface{}) (int, error) {
 	return fmt.Fprintln(s, args...)
 }
 
+func (s *Spider) SetSize(width, height int) {
+	if s.terminal != nil {
+		s.terminal.SetSize(width, height)
+	}
+}
+
 func (s *Spider) PrintHelp() {
 	s.Println()
 	s.Println(s.Config.Description)
 	s.Println()
 	s.Println("Commands:")
+	w := tabwriter.NewWriter(s, 0, 2, 4, ' ', 0)
 	for _, command := range s.Commands.list {
-		s.Println("\t" + command.Name + "\t" + command.Description)
+		fmt.Fprintln(w, BLANK2+command.Name+TAB+command.Description)
 	}
+	w.Flush()
 }
 
 func (s *Spider) PrintCommandHelp(command *Command) {
 	s.Println()
 	s.Println(command.Description)
 	s.Println("Usage:")
-	s.Println("\t" + command.Usage)
+	s.Println(BLANK2 + command.Usage)
 	s.Println("Flags:")
 	for _, flag := range command.flags.list {
-		s.Println("\t", "-"+flag.Short, "--"+flag.Long, "\t"+flag.Help)
+		s.Println(BLANK2, "-"+flag.Short, "--"+flag.Long, "\t"+flag.Help)
 	}
 	s.Println("Args:")
 	for _, arg := range command.args.list {
-		s.Println("\t", arg.Name, arg.Help)
+		s.Println(BLANK2, arg.Name, arg.Help)
 	}
 	s.Println("Sub Commands:")
 	for _, sub := range command.Children.list {
-		s.Println("\t" + sub.Name + "\t" + sub.Description)
+		s.PrintCommandList(TAB, sub)
+	}
+}
+
+func (s *Spider) PrintCommandList(padding string, command *Command) {
+	s.Println(padding + command.Name + TAB + command.Description)
+	for _, sub := range command.Children.list {
+		s.PrintCommandList(padding, sub)
 	}
 }
 

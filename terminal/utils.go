@@ -48,32 +48,3 @@ var (
 	pasteEnd      = []byte{CharEsc, '[', '2', '0', '1', '~'}
 	ErrNotRunning = errors.New("NOT_RUNNING")
 )
-
-type RawMode struct {
-	state *State
-}
-
-func (r *RawMode) Enter() (err error) {
-	r.state, err = MakeRaw(GetStdin())
-	return err
-}
-
-func (r *RawMode) Exit() error {
-	if r.state == nil {
-		return nil
-	}
-	return Restore(GetStdin(), r.state)
-}
-
-func Restore(fd int, state *State) error {
-	err := restoreTerm(fd, state)
-	if err != nil {
-		// errno 0 means everything is ok :)
-		if err.Error() == "errno 0" {
-			return nil
-		} else {
-			return err
-		}
-	}
-	return nil
-}

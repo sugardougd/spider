@@ -18,7 +18,7 @@ func main() {
 		spider.ConfigBanner("welcome to spider!\n"),
 		spider.ConfigPrivateFile("spider/ssh/spider"),
 		spider.ConfigPasswordValidator(passwordValidator))
-	commands := spider.NewCommands(commands.TestCommand(), spider.NoyaCommand())
+	commands := spider.NewCommands(commands.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
 	if err := spider.RunSSH(config, commands, ctx); err != nil {

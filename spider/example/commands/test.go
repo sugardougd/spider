@@ -5,8 +5,7 @@ import "spider/spider"
 func TestCommand() *spider.Command {
 	cmd := &spider.Command{
 		Name:        "test",
-		Description: "use 'test [command]' for command help",
-		Usage:       "use 'test [command]' for command usage",
+		Description: "test command",
 		Flags: func(flags *spider.Flags) {
 			flags.Bool(&spider.Flag{
 				Short:   "a",
@@ -72,8 +71,7 @@ func TestCommand() *spider.Command {
 	}
 	subCmd := &spider.Command{
 		Name:        "subtest",
-		Description: "use 'test [command]' for command help",
-		Usage:       "use 'test [command]' for command usage",
+		Description: "subtest command",
 		Flags: func(flags *spider.Flags) {
 			flags.Bool(&spider.Flag{
 				Short:   "a",
@@ -136,5 +134,28 @@ func TestCommand() *spider.Command {
 		},
 	}
 	cmd.AddCommand(subCmd)
+	return cmd
+}
+
+func Test1Command() *spider.Command {
+	cmd := &spider.Command{
+		Name:        "test1",
+		Description: "test1 command",
+		Flags: func(flags *spider.Flags) {
+			flags.Bool(&spider.Flag{
+				Short:   "a",
+				Long:    "aaa",
+				Help:    "aaa flag",
+				Usage:   "aaa usage",
+				Require: false,
+				Default: false,
+			})
+		},
+		Run: func(context *spider.Context) error {
+			context.Spider.Println(context.String())
+			context.Spider.Println("------------------------------------------------------------")
+			return nil
+		},
+	}
 	return cmd
 }
