@@ -20,9 +20,16 @@ func NewCommands(command ...*Command) *Commands {
 }
 
 func (commands *Commands) Add(command *Command) error {
+	return commands.add(command, true)
+}
+
+func (commands *Commands) add(command *Command, helpFlag bool) error {
 	err := command.validate()
 	if err != nil {
 		return err
+	}
+	if helpFlag {
+		command.flags.Bool(&Flag{Short: "h", Long: "help", Help: "display help", Default: false})
 	}
 	command.registerFlags()
 	command.registerArgs()
@@ -114,13 +121,6 @@ func (command *Command) FindChildren(name string) *Command {
 
 func (command *Command) RegisterFlags(flag func(c *Command, f *Flags) error) error {
 	return flag(command, &command.flags)
-}
-
-func (command *Command) FullName() string {
-	if command.Parent != nil {
-		return command.Parent.FullName() + "." + command.Name
-	}
-	return command.Name
 }
 
 func (command *Command) registerFlags() {

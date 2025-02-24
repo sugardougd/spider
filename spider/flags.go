@@ -27,7 +27,12 @@ type FlagValue struct {
 	isDefault bool
 }
 
-type FlagValues map[string]*FlagValue
+type FlagKey struct {
+	command *Command
+	long    string
+}
+
+type FlagValues map[FlagKey]*FlagValue
 
 func (flags *Flags) parse(command *Command, args []string, required bool, flagValues FlagValues) (remaining []string, err error) {
 	for len(args) > 0 {
@@ -50,7 +55,6 @@ func (flags *Flags) parse(command *Command, args []string, required bool, flagVa
 		}
 		args = args[1:]
 		// find FlagParser
-		fullName := flag.fullName(command.FullName())
 		parser, ok := flags.parsers[flag.Long]
 		if ok {
 			var flagValue *FlagValue
@@ -58,22 +62,23 @@ func (flags *Flags) parse(command *Command, args []string, required bool, flagVa
 			if err != nil {
 				break
 			}
-			flagValues[fullName] = flagValue
+			key := FlagKey{command: command, long: flag.Long}
+			flagValues[key] = flagValue
 		}
 	}
 	remaining = args
 
 	// check require argument and set the default values
 	for _, flag := range flags.list {
-		fullName := flag.fullName(command.FullName())
-		if _, ok := flagValues[fullName]; ok {
+		key := FlagKey{command: command, long: flag.Long}
+		if _, ok := flagValues[key]; ok {
 			continue
 		}
 		if flag.Require && required {
 			err = fmt.Errorf("missing flag '-%s'", flag.Short)
 			break
 		}
-		flagValues[fullName] = &FlagValue{
+		flagValues[key] = &FlagValue{
 			value:     flag.Default,
 			isDefault: true,
 		}
@@ -149,10 +154,6 @@ func (flag *Flag) match(f string) bool {
 func (flag *Flag) matchPrefix(f string) bool {
 	return (len(flag.Short) > 0 && strings.HasPrefix("-"+flag.Short, f)) ||
 		(len(flag.Long) > 0 && strings.HasPrefix("--"+flag.Long, f))
-}
-
-func (flag *Flag) fullName(parent string) string {
-	return parent + "." + flag.Long
 }
 
 func (flag *Flag) validate() error {
@@ -244,10 +245,10 @@ func parseStringFlag(flag, value string, found bool, args []string) (*FlagValue,
 }
 
 // Bool parent is Command FullName
-func (flags FlagValues) Bool(parent, long string) (bool, error) {
-	fullName := parent + "." + long
-	flagVal := flags[fullName]
-	if flagVal == nil {
+func (flags FlagValues) Bool(command *Command, long string) (bool, error) {
+	key := FlagKey{command: command, long: long}
+	flagVal, ok := flags[key]
+	if !ok {
 		return false, fmt.Errorf("missing flag value: flag '%s' not registered", long)
 	}
 	v, ok := flagVal.value.(bool)
@@ -257,10 +258,10 @@ func (flags FlagValues) Bool(parent, long string) (bool, error) {
 	return v, nil
 }
 
-func (flags FlagValues) Int(parent, long string) (int, error) {
-	fullName := parent + "." + long
-	flagVal := flags[fullName]
-	if flagVal == nil {
+func (flags FlagValues) Int(command *Command, long string) (int, error) {
+	key := FlagKey{command: command, long: long}
+	flagVal, ok := flags[key]
+	if !ok {
 		return 0, fmt.Errorf("missing flag value: flag '%s' not registered", long)
 	}
 	v, ok := flagVal.value.(int)
@@ -270,10 +271,10 @@ func (flags FlagValues) Int(parent, long string) (int, error) {
 	return v, nil
 }
 
-func (flags FlagValues) Float64(parent, long string) (float64, error) {
-	fullName := parent + "." + long
-	flagVal := flags[fullName]
-	if flagVal == nil {
+func (flags FlagValues) Float64(command *Command, long string) (float64, error) {
+	key := FlagKey{command: command, long: long}
+	flagVal, ok := flags[key]
+	if !ok {
 		return 0, fmt.Errorf("missing flag value: flag '%s' not registered", long)
 	}
 	v, ok := flagVal.value.(float64)
@@ -283,10 +284,10 @@ func (flags FlagValues) Float64(parent, long string) (float64, error) {
 	return v, nil
 }
 
-func (flags FlagValues) String(parent, long string) (string, error) {
-	fullName := parent + "." + long
-	flagVal := flags[fullName]
-	if flagVal == nil {
+func (flags FlagValues) String(command *Command, long string) (string, error) {
+	key := FlagKey{command: command, long: long}
+	flagVal, ok := flags[key]
+	if !ok {
 		return "", fmt.Errorf("missing flag value: flag '%s' not registered", long)
 	}
 	v, ok := flagVal.value.(string)

@@ -30,16 +30,15 @@ func NoyaCommand() *spider.Command {
 			f.Int(&spider.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
 		},
 		Run: func(c *spider.Context) error {
-			fullName := c.Command.FullName()
-			low, err := c.FlagValues.Int(fullName, "low")
+			low, err := c.FlagValues.Int(c.Command, "low")
 			if err != nil {
 				return err
 			}
-			top, err := c.FlagValues.Int(fullName, "top")
+			top, err := c.FlagValues.Int(c.Command, "top")
 			if err != nil {
 				return err
 			}
-			count, err := c.FlagValues.Int(fullName, "count")
+			count, err := c.FlagValues.Int(c.Command, "count")
 			if err != nil {
 				return err
 			}
@@ -62,16 +61,15 @@ func NoyaCommand() *spider.Command {
 			f.Int(&spider.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
 		},
 		Run: func(c *spider.Context) error {
-			fullName := c.Command.FullName()
-			low, err := c.FlagValues.Int(fullName, "low")
+			low, err := c.FlagValues.Int(c.Command, "low")
 			if err != nil {
 				return err
 			}
-			top, err := c.FlagValues.Int(fullName, "top")
+			top, err := c.FlagValues.Int(c.Command, "top")
 			if err != nil {
 				return err
 			}
-			count, err := c.FlagValues.Int(fullName, "count")
+			count, err := c.FlagValues.Int(c.Command, "count")
 			if err != nil {
 				return err
 			}
@@ -94,16 +92,15 @@ func NoyaCommand() *spider.Command {
 			f.Int(&spider.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
 		},
 		Run: func(c *spider.Context) error {
-			fullName := c.Command.FullName()
-			low, err := c.FlagValues.Int(fullName, "low")
+			low, err := c.FlagValues.Int(c.Command, "low")
 			if err != nil {
 				return err
 			}
-			top, err := c.FlagValues.Int(fullName, "top")
+			top, err := c.FlagValues.Int(c.Command, "top")
 			if err != nil {
 				return err
 			}
-			count, err := c.FlagValues.Int(fullName, "count")
+			count, err := c.FlagValues.Int(c.Command, "count")
 			if err != nil {
 				return err
 			}

@@ -70,6 +70,11 @@ func (s *Spider) RunCommand(cmd string) error {
 	if command == nil {
 		return fmt.Errorf("illegal command '%s'", args[0])
 	}
+	helpFlag, err := flagValues.Bool(command, "help")
+	if (err == nil && helpFlag) || command.Run == nil {
+		s.PrintCommandHelp(command)
+		return nil
+	}
 	// parse args
 	argValues := make(ArgValues)
 	args, err = command.args.parse(args, argValues)
@@ -153,16 +158,24 @@ func (s *Spider) PrintHelp() {
 func (s *Spider) PrintCommandHelp(command *Command) {
 	s.Println()
 	s.Println(command.Description)
+
+	s.Println()
 	s.Println("Usage:")
 	s.Println(BLANK2 + command.Usage)
+
+	s.Println()
 	s.Println("Flags:")
 	for _, flag := range command.flags.list {
 		s.Println(BLANK2, "-"+flag.Short, "--"+flag.Long, "\t"+flag.Help)
 	}
+
+	s.Println()
 	s.Println("Args:")
 	for _, arg := range command.args.list {
 		s.Println(BLANK2, arg.Name, arg.Help)
 	}
+
+	s.Println()
 	s.Println("Sub Commands:")
 	for _, sub := range command.Children.list {
 		s.PrintCommandList(TAB, sub)

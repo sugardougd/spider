@@ -66,7 +66,7 @@ func spiderCommand() *Command {
 func exitCommand() *Command {
 	return &Command{
 		Name:        "exit",
-		Description: "exit the spider",
+		Description: "exit the shell",
 		builtin:     true,
 		Run: func(c *Context) error {
 			return c.Stop()
