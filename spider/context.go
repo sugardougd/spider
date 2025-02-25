@@ -25,7 +25,7 @@ func (context *Context) String() string {
 	if len(context.FlagValues) > 0 {
 		builder.WriteString("\nFlags:")
 		for name, flag := range context.FlagValues {
-			builder.WriteString(fmt.Sprintf("\n\t%s: %v", name, flag.value))
+			builder.WriteString(fmt.Sprintf("\n\t%s: %v", name.long, flag.value))
 			if flag.isDefault {
 				builder.WriteString("[*]")
 			}

@@ -58,35 +58,16 @@ func (s *Spider) run() error {
 }
 
 func (s *Spider) RunCommand(cmd string) error {
-	args := strings.Fields(cmd)
-	if len(args) == 0 {
-		return nil
-	}
-	flagValues := make(FlagValues)
-	command, args, err := s.Commands.parse(args, true, flagValues)
+	command, flagValues, argValues, err := s.parse(cmd, true)
 	if err != nil {
 		return err
 	}
 	if command == nil {
-		return fmt.Errorf("illegal command '%s'", args[0])
-	}
-	helpFlag, err := flagValues.Bool(command, "help")
-	if (err == nil && helpFlag) || command.Run == nil {
-		s.PrintCommandHelp(command)
 		return nil
 	}
-	// parse args
-	argValues := make(ArgValues)
-	args, err = command.args.parse(args, argValues)
-	if err != nil {
-		return err
+	if command.Run == nil {
+		return fmt.Errorf("illagel command Run '%s'", command.Name)
 	}
-
-	// Check, if values from the argument string are not consumed (and therefore invalid).
-	if len(args) > 0 {
-		return fmt.Errorf("invalid usage of command '%s' (unconsumed input '%s'), try 'help'", command.Name, strings.Join(args, " "))
-	}
-
 	context := &Context{
 		Spider:     s,
 		Command:    command,
@@ -94,10 +75,39 @@ func (s *Spider) RunCommand(cmd string) error {
 		FlagValues: flagValues,
 		ArgValues:  argValues,
 	}
-	if command.Run == nil {
-		return fmt.Errorf("illagel command Run '%s'", command.Name)
-	}
 	return command.Run(context)
+}
+
+func (s *Spider) parse(cmd string, required bool) (*Command, FlagValues, ArgValues, error) {
+	args := strings.Fields(cmd)
+	if len(args) == 0 {
+		return nil, nil, nil, nil
+	}
+	flagValues := make(FlagValues)
+	command, args, err := s.Commands.parse(args, required, flagValues)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if command == nil {
+		return nil, nil, nil, fmt.Errorf("illegal command '%s'", args[0])
+	}
+	helpFlag, err := flagValues.Bool(command, "help")
+	if (err == nil && helpFlag) || command.Run == nil {
+		s.PrintCommandHelp(command)
+		return nil, nil, nil, nil
+	}
+	// parse args
+	argValues := make(ArgValues)
+	args, err = command.args.parse(args, argValues)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Check, if values from the argument string are not consumed (and therefore invalid).
+	if len(args) > 0 {
+		return nil, nil, nil, fmt.Errorf("invalid usage of command '%s' (unconsumed input '%s'), try 'help'", command.Name, strings.Join(args, " "))
+	}
+	return command, flagValues, argValues, nil
 }
 
 func (s *Spider) AddCommand(cmd *Command) error {
