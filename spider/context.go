@@ -1,6 +1,7 @@
 package spider
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -11,11 +12,12 @@ type Context struct {
 	CommandStr string
 	FlagValues FlagValues
 	ArgValues  ArgValues
+	Ctx        context.Context
 }
 
 // Stop signalizes the app to exit.
 func (context *Context) Stop() error {
-	return context.Spider.Stop()
+	return context.Spider.stop()
 }
 
 func (context *Context) String() string {

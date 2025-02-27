@@ -2,7 +2,6 @@ package spider
 
 import (
 	"fmt"
-	"os"
 )
 
 func helpCommand() *Command {
@@ -43,7 +42,7 @@ func spiderCommand() *Command {
 	cmd := &Command{
 		Name:        "spider",
 		Description: "spider tool",
-		Usage:       "",
+		Usage:       "spider <command> [flags] [args]",
 		builtin:     true,
 		Run: func(c *Context) error {
 			c.Spider.PrintCommandHelp(c.Command)
@@ -51,14 +50,18 @@ func spiderCommand() *Command {
 		},
 	}
 	cmd.AddCommand(&Command{
-		Name:        "stats",
+		Name:        "gps",
 		Description: "displays process info",
+		Usage:       "spider gps",
 		builtin:     true,
-		Run: func(c *Context) error {
-			c.Spider.Println("PPID:", os.Getppid())
-			c.Spider.Println("PID:", os.Getpid())
-			return nil
-		},
+		Run:         spiderGps,
+	})
+	cmd.AddCommand(&Command{
+		Name:        "memory",
+		Description: "displays process memory info",
+		Usage:       "spider memory",
+		builtin:     true,
+		Run:         spiderGps,
 	})
 	return cmd
 }

@@ -10,7 +10,7 @@ const (
 )
 
 func (s *Spider) autoComplete(line string, pos int, key rune) (newLine string, newPos int, ok bool) {
-	if key != CharTab {
+	if key != CharTab || !s.Config.Interactive {
 		return
 	}
 	prefix := line[:pos]
@@ -93,12 +93,9 @@ func (s *Spider) autoComplete(line string, pos int, key rune) (newLine string, n
 			for i, s := range suggestions {
 				suggestions[i] = tip + s
 			}
-			var buffer strings.Builder
-			buffer.WriteString(s.Config.Prompt)
-			buffer.WriteString(line)
-			buffer.WriteRune('\n')
-			buffer.WriteString(strings.Join(suggestions, TAB2))
-			s.Println(buffer.String())
+			s.Print(s.Config.Prompt)
+			s.Println(line)
+			s.Println(strings.Join(suggestions, TAB2))
 			newPos = pos
 			newLine = line
 		}

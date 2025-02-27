@@ -16,7 +16,8 @@ func RunConsole(config *Config, commands *Commands, ctx context.Context) error {
 	}
 	defer term.Restore(fd, raw)
 
-	s := New(config, commands)
+	s := New(config)
+	s.AddCommands(commands)
 	terminal := term.NewTerminal(&ReadWriter{
 		Reader: os.Stdin,
 		Writer: os.Stdout,
@@ -27,13 +28,8 @@ func RunConsole(config *Config, commands *Commands, ctx context.Context) error {
 		s.SetSize(width, height)
 	})
 
-	go s.RunWithTerminal(terminal)
-
-	select {
-	case <-ctx.Done():
-		s.Stop()
-	case <-s.stopSignal:
-		break
+	if err = s.RunWithTerminal(terminal, ctx); err != nil {
+		return err
 	}
 	return nil
 }

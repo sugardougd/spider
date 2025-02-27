@@ -4,6 +4,7 @@ type ConfigOption struct {
 	Name              string            // specifies the application name. This field is required.
 	Description       string            // specifies the application description.
 	Prompt            string            // defines the shell prompt.
+	Interactive       bool              // cannot auto complete if not
 	Address           string            // 监听地址 IP:PORT. for tcp & ssh
 	NoClientAuth      bool              // 是否认证客户端. for ssh
 	passwordValidator PasswordValidator // 校验用户名密码. for ssh
@@ -33,6 +34,12 @@ func ConfigDescription(description string) ConfigOptional {
 func ConfigPrompt(prompt string) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.Prompt = prompt
+	}
+}
+
+func ConfigInteractive(interactive bool) ConfigOptional {
+	return func(option *ConfigOption) {
+		option.Interactive = interactive
 	}
 }
 

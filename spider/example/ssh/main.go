@@ -13,6 +13,7 @@ func main() {
 		spider.ConfigName("spider"),
 		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
 		spider.ConfigPrompt("spider > "),
+		spider.ConfigInteractive(true),
 		spider.ConfigAddress(":8080"),
 		spider.ConfigNoClientAuth(false),
 		spider.ConfigBanner("welcome to spider!\n"),

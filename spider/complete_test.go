@@ -5,11 +5,7 @@ import (
 )
 
 func TestSpider_autoComplete(t *testing.T) {
-	config := NewConfig(
-		ConfigName("spider"),
-		ConfigDescription("spider is a tool to list and diagnose Go processes"),
-		ConfigPrompt("spider > "))
-	s := New(config, testCommand())
+	s := NewSpiderMock()
 
 	tests := []struct {
 		line    string

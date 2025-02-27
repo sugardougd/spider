@@ -1,11 +1,13 @@
 package spider
 
 import (
+	"context"
 	"fmt"
 	"golang.org/x/term"
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"text/tabwriter"
 )
 
@@ -14,50 +16,69 @@ type Spider struct {
 	Commands   Commands
 	stopSignal chan struct{}
 	terminal   *term.Terminal
+	mux        sync.Mutex
 }
 
-func New(config *Config, commands *Commands) *Spider {
+func New(config *Config) *Spider {
 	s := Spider{
-		Config:     config,
-		stopSignal: make(chan struct{}),
+		Config: config,
 	}
 	// Add general builtin Commands. help exit
-	s.AddCommand(helpCommand())
 	s.AddCommand(spiderCommand())
+	s.AddCommand(helpCommand())
 	s.AddCommand(exitCommand())
-
-	for _, cmd := range commands.list {
-		s.AddCommand(cmd)
-	}
 	return &s
 }
 
-func (s *Spider) RunWithTerminal(terminal *term.Terminal) error {
-	s.terminal = terminal
-	s.terminal.AutoCompleteCallback = s.autoComplete
-	return s.run()
-}
-
-func (s *Spider) run() error {
-	for s.IsRunning() {
-		select {
-		case <-s.stopSignal:
-			break
-		default:
-			cmd, err := s.terminal.ReadLine()
-			if err != nil {
-				s.Stop()
-				break
-			}
-			if err := s.RunCommand(cmd); err != nil {
-				s.Printf("%v\n", err)
-			}
+func (s *Spider) AddCommands(commands *Commands) error {
+	for _, cmd := range commands.list {
+		if err := s.AddCommand(cmd); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (s *Spider) RunCommand(cmd string) error {
+func (s *Spider) AddCommand(cmd *Command) error {
+	return s.Commands.Add(cmd)
+}
+
+func (s *Spider) RunWithTerminal(terminal *term.Terminal, ctx context.Context) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.stopSignal = make(chan struct{})
+	defer func() {
+		s.stopSignal = nil
+	}()
+	s.terminal = terminal
+	s.terminal.AutoCompleteCallback = s.autoComplete
+	return s.run(ctx)
+}
+
+func (s *Spider) run(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			s.stop()
+			goto exit
+		case <-s.stopSignal:
+			goto exit
+		default:
+			cmd, err := s.terminal.ReadLine()
+			if err != nil {
+				s.stop()
+				goto exit
+			}
+			if err := s.RunCommand(cmd, ctx); err != nil {
+				s.Printf("%v\n", err)
+			}
+		}
+	}
+exit:
+	return nil
+}
+
+func (s *Spider) RunCommand(cmd string, ctx context.Context) error {
 	command, flagValues, argValues, err := s.parse(cmd, true)
 	if err != nil {
 		return err
@@ -74,6 +95,7 @@ func (s *Spider) RunCommand(cmd string) error {
 		CommandStr: cmd,
 		FlagValues: flagValues,
 		ArgValues:  argValues,
+		Ctx:        ctx,
 	}
 	return command.Run(context)
 }
@@ -110,22 +132,12 @@ func (s *Spider) parse(cmd string, required bool) (*Command, FlagValues, ArgValu
 	return command, flagValues, argValues, nil
 }
 
-func (s *Spider) AddCommand(cmd *Command) error {
-	return s.Commands.Add(cmd)
-}
-
-func (s *Spider) Stop() error {
+func (s *Spider) stop() error {
+	if s.stopSignal == nil {
+		return fmt.Errorf("has stopped")
+	}
 	close(s.stopSignal)
 	return nil
-}
-
-func (s *Spider) IsRunning() bool {
-	select {
-	case <-s.stopSignal:
-		return false
-	default:
-		return true
-	}
 }
 
 func (s *Spider) Write(p []byte) (n int, err error) {
@@ -173,23 +185,30 @@ func (s *Spider) PrintCommandHelp(command *Command) {
 	s.Println("Usage:")
 	s.Println(BLANK2 + command.Usage)
 
-	s.Println()
-	s.Println("Flags:")
-	for _, flag := range command.flags.list {
-		s.Println(BLANK2, "-"+flag.Short, "--"+flag.Long, "\t"+flag.Help)
+	if len(command.flags.list) > 0 {
+		s.Println()
+		s.Println("Flags:")
+		for _, flag := range command.flags.list {
+			s.Println(BLANK2, "-"+flag.Short, "--"+flag.Long, "\t"+flag.Help)
+		}
 	}
 
-	s.Println()
-	s.Println("Args:")
-	for _, arg := range command.args.list {
-		s.Println(BLANK2, arg.Name, arg.Help)
+	if len(command.args.list) > 0 {
+		s.Println()
+		s.Println("Args:")
+		for _, arg := range command.args.list {
+			s.Println(BLANK2, arg.Name, arg.Help)
+		}
 	}
 
-	s.Println()
-	s.Println("Sub Commands:")
-	for _, sub := range command.Children.list {
-		s.PrintCommandList(TAB, sub)
+	if len(command.Children.list) > 0 {
+		s.Println()
+		s.Println("Sub Commands:")
+		for _, sub := range command.Children.list {
+			s.PrintCommandList(TAB, sub)
+		}
 	}
+
 }
 
 func (s *Spider) PrintCommandList(padding string, command *Command) {

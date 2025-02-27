@@ -5,11 +5,7 @@ import (
 )
 
 func TestSpider_parse(t *testing.T) {
-	config := NewConfig(
-		ConfigName("spider"),
-		ConfigDescription("spider is a tool to list and diagnose Go processes"),
-		ConfigPrompt("spider > "))
-	s := New(config, testCommand())
+	s := NewSpiderMock()
 
 	wrongCmd := []string{
 		"hello",
@@ -252,4 +248,14 @@ func testCommand() *Commands {
 	command1.AddCommand(subCommand2)
 
 	return NewCommands(command, command1)
+}
+
+func NewSpiderMock() *Spider {
+	config := NewConfig(
+		ConfigName("spider"),
+		ConfigDescription("spider is a tool to list and diagnose Go processes"),
+		ConfigPrompt("spider > "))
+	s := New(config)
+	s.AddCommands(testCommand())
+	return s
 }

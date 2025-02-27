@@ -27,7 +27,7 @@ func RunSSH(config *Config, commands *Commands, ctx context.Context) error {
 	}
 	fmt.Printf("Listening SSH on %s\r\n", config.Address)
 
-	go acceptSSHConnection(listener, config, sshConfig, commands)
+	go acceptSSHConnection(listener, config, sshConfig, commands, ctx)
 
 	select {
 	case <-ctx.Done():
@@ -35,18 +35,19 @@ func RunSSH(config *Config, commands *Commands, ctx context.Context) error {
 	}
 }
 
-func acceptSSHConnection(listener net.Listener, config *Config, sshConfig *ssh.ServerConfig, commands *Commands) {
+func acceptSSHConnection(listener net.Listener, config *Config, sshConfig *ssh.ServerConfig, commands *Commands, ctx context.Context) {
 	for {
 		tcpConn, err := listener.Accept()
 		if err != nil {
 			fmt.Printf("Failed to accept connection: %v\r\n", err)
 			break
 		}
-		go handleSSHConnection(tcpConn, config, sshConfig, commands)
+		childCtx, _ := context.WithCancel(ctx)
+		go handleSSHConnection(tcpConn, config, sshConfig, commands, childCtx)
 	}
 }
 
-func handleSSHConnection(conn net.Conn, config *Config, sshConfig *ssh.ServerConfig, commands *Commands) {
+func handleSSHConnection(conn net.Conn, config *Config, sshConfig *ssh.ServerConfig, commands *Commands, ctx context.Context) {
 	defer conn.Close()
 	// 进行 SSH 握手
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, sshConfig)
@@ -61,11 +62,11 @@ func handleSSHConnection(conn net.Conn, config *Config, sshConfig *ssh.ServerCon
 	go ssh.DiscardRequests(reqs)
 
 	for newChannel := range chans {
-		go handleSSHChannel(sshConn, newChannel, config, commands)
+		go handleSSHChannel(sshConn, newChannel, config, commands, ctx)
 	}
 }
 
-func handleSSHChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config *Config, commands *Commands) {
+func handleSSHChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config *Config, commands *Commands, ctx context.Context) {
 	fmt.Printf("[%s@%s]NewChannel type: %s\r\n", sshConn.User(), sshConn.RemoteAddr(), newChannel.ChannelType())
 	if newChannel.ChannelType() != "session" {
 		newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
@@ -76,12 +77,15 @@ func handleSSHChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config
 		fmt.Printf("Could not accept channel: %v\r\n", err)
 		return
 	}
-	s := New(config, commands)
+	s := New(config)
+	s.AddCommands(commands)
 	defer channel.Close()
 	go handleSSHChannelRequests(sshConn, reqs, func(width, height int) {
 		s.SetSize(width, height)
 	})
-	s.RunWithTerminal(term.NewTerminal(channel, config.Prompt))
+	if err = s.RunWithTerminal(term.NewTerminal(channel, config.Prompt), ctx); err != nil {
+		fmt.Printf("[%s@%s]Exit Terminal Spider: %v\r\n", sshConn.User(), sshConn.RemoteAddr(), err)
+	}
 }
 
 func handleSSHChannelRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request, windowChanged func(width, height int)) {
