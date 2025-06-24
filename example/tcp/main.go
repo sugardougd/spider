@@ -3,21 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
-	spider2 "spider"
-	"spider/example/commands"
+	"github.com/sugardougd/spider"
+	"github.com/sugardougd/spider/example/commands"
 	"time"
 )
 
 func main() {
-	config := spider2.NewConfig(
-		spider2.ConfigName("spider"),
-		spider2.ConfigDescription("spider is a tool to list and diagnose Go processes"),
-		spider2.ConfigPrompt("spider > "),
-		spider2.ConfigAddress(":8080"))
-	commands := spider2.NewCommands(commands.NoyaCommand())
+	config := spider.NewConfig(
+		spider.ConfigName("spider"),
+		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
+		spider.ConfigPrompt("spider > "),
+		spider.ConfigAddress(":8080"))
+	commands := spider.NewCommands(commands.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
-	if err := spider2.RunTCP(ctx, config, commands); err != nil {
+	if err := spider.RunTCP(ctx, config, commands); err != nil {
 		fmt.Println("exit spider", err.Error())
 	}
 }

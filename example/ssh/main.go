@@ -3,26 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
-	spider2 "spider"
-	"spider/example/commands"
+	"github.com/sugardougd/spider"
+	"github.com/sugardougd/spider/example/commands"
 	"time"
 )
 
 func main() {
-	config := spider2.NewConfig(
-		spider2.ConfigName("spider"),
-		spider2.ConfigDescription("spider is a tool to list and diagnose Go processes"),
-		spider2.ConfigPrompt("spider > "),
-		spider2.ConfigInteractive(true),
-		spider2.ConfigAddress(":8080"),
-		spider2.ConfigNoClientAuth(false),
-		spider2.ConfigBanner("welcome to spider!\n"),
-		spider2.ConfigPrivateFile("spider/ssh/spider"),
-		spider2.ConfigPasswordValidator(passwordValidator))
-	commands := spider2.NewCommands(commands.NoyaCommand())
+	config := spider.NewConfig(
+		spider.ConfigName("spider"),
+		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
+		spider.ConfigPrompt("spider > "),
+		spider.ConfigInteractive(true),
+		spider.ConfigAddress(":8080"),
+		spider.ConfigNoClientAuth(false),
+		spider.ConfigBanner("welcome to spider!\n"),
+		spider.ConfigPrivateFile("spider/ssh/spider"),
+		spider.ConfigPasswordValidator(passwordValidator))
+	commands := spider.NewCommands(commands.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
-	if err := spider2.RunSSH(ctx, config, commands); err != nil {
+	if err := spider.RunSSH(ctx, config, commands); err != nil {
 		fmt.Println("exit spider", err.Error())
 	}
 }
