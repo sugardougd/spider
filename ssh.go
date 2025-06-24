@@ -13,7 +13,7 @@ import (
 
 type PasswordValidator func(user, password string) bool
 
-func RunSSH(config *Config, commands *Commands, ctx context.Context) error {
+func RunSSH(ctx context.Context, config *Config, commands *Commands) error {
 	// SSH 配置
 	sshConfig, err := config.newSSHConfig()
 	if err != nil {
@@ -27,7 +27,7 @@ func RunSSH(config *Config, commands *Commands, ctx context.Context) error {
 	}
 	fmt.Printf("Listening SSH on %s\r\n", config.Address)
 
-	go acceptSSHConnection(listener, config, sshConfig, commands, ctx)
+	go acceptSSHConnection(ctx, listener, config, sshConfig, commands)
 
 	select {
 	case <-ctx.Done():
@@ -35,7 +35,7 @@ func RunSSH(config *Config, commands *Commands, ctx context.Context) error {
 	}
 }
 
-func acceptSSHConnection(listener net.Listener, config *Config, sshConfig *ssh.ServerConfig, commands *Commands, ctx context.Context) {
+func acceptSSHConnection(ctx context.Context, listener net.Listener, config *Config, sshConfig *ssh.ServerConfig, commands *Commands) {
 	for {
 		tcpConn, err := listener.Accept()
 		if err != nil {
@@ -43,11 +43,11 @@ func acceptSSHConnection(listener net.Listener, config *Config, sshConfig *ssh.S
 			break
 		}
 		childCtx, _ := context.WithCancel(ctx)
-		go handleSSHConnection(tcpConn, config, sshConfig, commands, childCtx)
+		go handleSSHConnection(childCtx, tcpConn, config, sshConfig, commands)
 	}
 }
 
-func handleSSHConnection(conn net.Conn, config *Config, sshConfig *ssh.ServerConfig, commands *Commands, ctx context.Context) {
+func handleSSHConnection(ctx context.Context, conn net.Conn, config *Config, sshConfig *ssh.ServerConfig, commands *Commands) {
 	defer conn.Close()
 	// 进行 SSH 握手
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, sshConfig)
@@ -62,11 +62,11 @@ func handleSSHConnection(conn net.Conn, config *Config, sshConfig *ssh.ServerCon
 	go ssh.DiscardRequests(reqs)
 
 	for newChannel := range chans {
-		go handleSSHChannel(sshConn, newChannel, config, commands, ctx)
+		go handleSSHChannel(ctx, sshConn, newChannel, config, commands)
 	}
 }
 
-func handleSSHChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config *Config, commands *Commands, ctx context.Context) {
+func handleSSHChannel(ctx context.Context, sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config *Config, commands *Commands) {
 	fmt.Printf("[%s@%s]NewChannel type: %s\r\n", sshConn.User(), sshConn.RemoteAddr(), newChannel.ChannelType())
 	if newChannel.ChannelType() != "session" {
 		newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
@@ -83,7 +83,7 @@ func handleSSHChannel(sshConn *ssh.ServerConn, newChannel ssh.NewChannel, config
 	go handleSSHChannelRequests(sshConn, reqs, func(width, height int) {
 		s.SetSize(width, height)
 	})
-	if err = s.RunWithTerminal(term.NewTerminal(channel, config.Prompt), ctx); err != nil {
+	if err = s.RunWithTerminal(ctx, term.NewTerminal(channel, config.Prompt)); err != nil {
 		fmt.Printf("[%s@%s]Exit Terminal Spider: %v\r\n", sshConn.User(), sshConn.RemoteAddr(), err)
 	}
 }
@@ -114,14 +114,14 @@ func handleSSHChannelRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request,
 	}
 }
 
-func (s *Config) newSSHConfig() (*ssh.ServerConfig, error) {
+func (c *Config) newSSHConfig() (*ssh.ServerConfig, error) {
 	sshConfig := &ssh.ServerConfig{
-		NoClientAuth: s.NoClientAuth,
+		NoClientAuth: c.NoClientAuth,
 	}
-	if s.passwordValidator != nil {
+	if c.passwordValidator != nil {
 		sshConfig.PasswordCallback = func(conn ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			// 这里可以添加你自己的认证逻辑，例如检查用户名和密码
-			if s.passwordValidator(conn.User(), string(pass)) {
+			if c.passwordValidator(conn.User(), string(pass)) {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("password rejected for %q", conn.User())
@@ -130,11 +130,11 @@ func (s *Config) newSSHConfig() (*ssh.ServerConfig, error) {
 
 	// banner
 	sshConfig.BannerCallback = func(conn ssh.ConnMetadata) string {
-		return s.Banner
+		return c.Banner
 	}
 
 	// 生成一个 SSH 密钥对
-	privateBytes, err := os.ReadFile(s.PrivateFile)
+	privateBytes, err := os.ReadFile(c.PrivateFile)
 	if err != nil {
 		return nil, err
 	}

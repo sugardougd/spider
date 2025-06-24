@@ -5,7 +5,7 @@ import (
 	"github.com/xuri/excelize/v2"
 	"io"
 	"math/rand"
-	"spider/spider"
+	spider2 "spider"
 	"strconv"
 	"strings"
 	"time"
@@ -13,14 +13,14 @@ import (
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func noyaCommandFlags(f *spider.Flags) {
-	f.Int(&spider.Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
-	f.Int(&spider.Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
-	f.Int(&spider.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
-	f.String(&spider.Flag{Short: "f", Long: "file", Help: "the excel file to save", Default: ""})
+func noyaCommandFlags(f *spider2.Flags) {
+	f.Int(&spider2.Flag{Short: "l", Long: "low", Help: "the low value", Default: 10})
+	f.Int(&spider2.Flag{Short: "t", Long: "top", Help: "the top value", Default: 10})
+	f.Int(&spider2.Flag{Short: "c", Long: "count", Help: "the count of problem", Default: 10})
+	f.String(&spider2.Flag{Short: "f", Long: "file", Help: "the excel file to save", Default: ""})
 }
 
-func noyaCommandRun(c *spider.Context, operators []mathOperator) error {
+func noyaCommandRun(c *spider2.Context, operators []mathOperator) error {
 	low, err := c.FlagValues.Int(c.Command, "low")
 	if err != nil {
 		return err
@@ -50,83 +50,83 @@ func noyaCommandRun(c *spider.Context, operators []mathOperator) error {
 	return nil
 }
 
-func NoyaCommand() *spider.Command {
-	noya := &spider.Command{
+func NoyaCommand() *spider2.Command {
+	noya := &spider2.Command{
 		Name:        "noya",
 		Description: "noya tools",
 		Usage:       "noya...",
-		Run: func(c *spider.Context) error {
+		Run: func(c *spider2.Context) error {
 			c.Spider.PrintCommandHelp(c.Command)
 			return nil
 		},
 	}
 	// add
-	add := &spider.Command{
+	add := &spider2.Command{
 		Name:        "math-add",
 		Description: "displays math-add problem",
 		Usage:       "noya math-add",
 		Flags:       noyaCommandFlags,
-		Run: func(c *spider.Context) error {
+		Run: func(c *spider2.Context) error {
 			opers := []mathOperator{mathOperatorFunc(mathAddCalculate)}
 			return noyaCommandRun(c, opers)
 		},
 	}
 
 	// keep-add
-	addKeep := &spider.Command{
+	addKeep := &spider2.Command{
 		Name:        "math-add-keep",
 		Description: "displays math-add-keep problem",
 		Usage:       "noya math-add-keep",
 		Flags:       noyaCommandFlags,
-		Run: func(c *spider.Context) error {
+		Run: func(c *spider2.Context) error {
 			opers := []mathOperator{mathOperatorFunc(mathKeepAddCalculate)}
 			return noyaCommandRun(c, opers)
 		},
 	}
 
 	// sub
-	sub := &spider.Command{
+	sub := &spider2.Command{
 		Name:        "math-sub",
 		Description: "displays math-sub problem",
 		Usage:       "noya math-sub",
 		Flags:       noyaCommandFlags,
-		Run: func(c *spider.Context) error {
+		Run: func(c *spider2.Context) error {
 			opers := []mathOperator{mathOperatorFunc(mathSubCalculate)}
 			return noyaCommandRun(c, opers)
 		},
 	}
 
 	// keep-sub
-	subKeep := &spider.Command{
+	subKeep := &spider2.Command{
 		Name:        "math-sub-keep",
 		Description: "displays math-sub-keep problem",
 		Usage:       "noya math-sub-keep",
 		Flags:       noyaCommandFlags,
-		Run: func(c *spider.Context) error {
+		Run: func(c *spider2.Context) error {
 			opers := []mathOperator{mathOperatorFunc(mathKeepSubCalculate)}
 			return noyaCommandRun(c, opers)
 		},
 	}
 
 	// add & sub
-	addSub := &spider.Command{
+	addSub := &spider2.Command{
 		Name:        "math-add-sub",
 		Description: "displays math-add & math-sub problem",
 		Usage:       "noya math-add-sub",
 		Flags:       noyaCommandFlags,
-		Run: func(c *spider.Context) error {
+		Run: func(c *spider2.Context) error {
 			opers := []mathOperator{mathOperatorFunc(mathAddCalculate), mathOperatorFunc(mathSubCalculate)}
 			return noyaCommandRun(c, opers)
 		},
 	}
 
 	// keep-add & keep-sub
-	addSubKeep := &spider.Command{
+	addSubKeep := &spider2.Command{
 		Name:        "math-add-sub-keep",
 		Description: "displays math-addkeep & math-subkeep problem",
 		Usage:       "noya math-add-sub-keep",
 		Flags:       noyaCommandFlags,
-		Run: func(c *spider.Context) error {
+		Run: func(c *spider2.Context) error {
 			opers := []mathOperator{mathOperatorFunc(mathKeepAddCalculate),
 				mathOperatorFunc(mathKeepSubCalculate),
 				mathOperatorFunc(mathKeepAddSubCalculate)}

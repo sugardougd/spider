@@ -7,21 +7,21 @@ import (
 	"net"
 )
 
-func RunTCP(config *Config, commands *Commands, ctx context.Context) error {
+func RunTCP(ctx context.Context, config *Config, commands *Commands) error {
 	listener, err := net.Listen("tcp", config.Address)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Listening TCP on %s\r\n", config.Address)
 
-	go acceptTCPConnection(listener, config, commands, ctx)
+	go acceptTCPConnection(ctx, listener, config, commands)
 	select {
 	case <-ctx.Done():
 		return listener.Close()
 	}
 }
 
-func acceptTCPConnection(listener net.Listener, config *Config, commands *Commands, ctx context.Context) {
+func acceptTCPConnection(ctx context.Context, listener net.Listener, config *Config, commands *Commands) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -29,16 +29,16 @@ func acceptTCPConnection(listener net.Listener, config *Config, commands *Comman
 			break
 		}
 		childCtx, _ := context.WithCancel(ctx)
-		go handleTCPConnection(conn, config, commands, childCtx)
+		go handleTCPConnection(childCtx, conn, config, commands)
 	}
 }
 
-func handleTCPConnection(conn net.Conn, config *Config, commands *Commands, ctx context.Context) {
+func handleTCPConnection(ctx context.Context, conn net.Conn, config *Config, commands *Commands) {
 	defer conn.Close()
 	fmt.Printf("[%s]New TCP connection\r\n", conn.RemoteAddr())
 	s := New(config)
 	s.AddCommands(commands)
-	if err := s.RunWithTerminal(term.NewTerminal(conn, config.Prompt), ctx); err != nil {
+	if err := s.RunWithTerminal(ctx, term.NewTerminal(conn, config.Prompt)); err != nil {
 		fmt.Printf("[%s]Exit Terminal Spider: %v\r\n", conn.RemoteAddr(), err)
 	}
 }

@@ -43,7 +43,7 @@ func (s *Spider) AddCommand(cmd *Command) error {
 	return s.Commands.Add(cmd)
 }
 
-func (s *Spider) RunWithTerminal(terminal *term.Terminal, ctx context.Context) error {
+func (s *Spider) RunWithTerminal(ctx context.Context, terminal *term.Terminal) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	s.stopSignal = make(chan struct{})
@@ -69,7 +69,7 @@ func (s *Spider) run(ctx context.Context) error {
 				s.stop()
 				goto exit
 			}
-			if err := s.RunCommand(cmd, ctx); err != nil {
+			if err := s.RunCommand(ctx, cmd); err != nil {
 				s.Printf("%v\n", err)
 			}
 		}
@@ -78,7 +78,7 @@ exit:
 	return nil
 }
 
-func (s *Spider) RunCommand(cmd string, ctx context.Context) error {
+func (s *Spider) RunCommand(ctx context.Context, cmd string) error {
 	command, flagValues, argValues, err := s.parse(cmd, true)
 	if err != nil {
 		return err

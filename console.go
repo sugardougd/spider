@@ -8,7 +8,7 @@ import (
 	"syscall"
 )
 
-func RunConsole(config *Config, commands *Commands, ctx context.Context) error {
+func RunConsole(ctx context.Context, config *Config, commands *Commands) error {
 	fd := int(os.Stdout.Fd())
 	raw, err := term.MakeRaw(fd)
 	if err != nil {
@@ -28,7 +28,7 @@ func RunConsole(config *Config, commands *Commands, ctx context.Context) error {
 		s.SetSize(width, height)
 	})
 
-	if err = s.RunWithTerminal(terminal, ctx); err != nil {
+	if err = s.RunWithTerminal(ctx, terminal); err != nil {
 		return err
 	}
 	return nil
