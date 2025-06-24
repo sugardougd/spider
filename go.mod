@@ -1,4 +1,4 @@
-module spider
+module github.com/sugardougd/spider
 
 go 1.20
 
