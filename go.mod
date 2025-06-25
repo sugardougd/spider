@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/xuri/excelize/v2 v2.9.0
-	golang.org/x/crypto v0.38.0
-	golang.org/x/term v0.32.0
+	golang.org/x/crypto v0.35.0
+	golang.org/x/term v0.29.0
 )
 
 require (
@@ -15,7 +15,7 @@ require (
 	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/nfp v0.0.1 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 )
