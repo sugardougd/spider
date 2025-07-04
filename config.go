@@ -8,6 +8,7 @@ type ConfigOption struct {
 	Prompt            string            // defines the shell prompt.
 	Interactive       bool              // cannot auto complete if not
 	ExecutedHook      ExecutedHook      // 执行命令后回调函数
+	Welcome           string            // welcome message
 	Address           string            // 监听地址 IP:PORT. for tcp & ssh
 	NoClientAuth      bool              // 是否认证客户端. for ssh
 	passwordValidator PasswordValidator // 校验用户名密码. for ssh
@@ -49,6 +50,12 @@ func ConfigInteractive(interactive bool) ConfigOptional {
 func ConfigExecutedHook(hook ExecutedHook) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.ExecutedHook = hook
+	}
+}
+
+func ConfigWelcome(welcome string) ConfigOptional {
+	return func(option *ConfigOption) {
+		option.Welcome = welcome
 	}
 }
 

@@ -51,17 +51,24 @@ func spiderCommand() *Command {
 	}
 	cmd.AddCommand(&Command{
 		Name:        "gps",
-		Description: "displays process info",
+		Description: "displays process information",
 		Usage:       "spider gps",
 		builtin:     true,
 		Run:         spiderGps,
 	})
 	cmd.AddCommand(&Command{
 		Name:        "memory",
-		Description: "displays process memory info",
+		Description: "displays process memory information",
 		Usage:       "spider memory",
 		builtin:     true,
-		Run:         spiderGps,
+		Run:         spiderMemory,
+	})
+	cmd.AddCommand(&Command{
+		Name:        "stack",
+		Description: "displays process stack information",
+		Usage:       "spider memory",
+		builtin:     true,
+		Run:         spiderStack,
 	})
 	return cmd
 }
