@@ -59,6 +59,20 @@ func (s *Spider) RunWithTerminal(ctx context.Context, terminal *term.Terminal) e
 }
 
 func (s *Spider) run(ctx context.Context) error {
+	readline := make(chan string)
+
+	// 另起goroutine来执行 terminal.ReadLine
+	go func() {
+		for {
+			cmd, err := s.terminal.ReadLine()
+			if err != nil {
+				close(readline)
+				s.stop()
+				return
+			}
+			readline <- cmd
+		}
+	}()
 	for {
 		select {
 		case <-ctx.Done():
@@ -66,12 +80,7 @@ func (s *Spider) run(ctx context.Context) error {
 			goto exit
 		case <-s.stopSignal:
 			goto exit
-		default:
-			cmd, err := s.terminal.ReadLine()
-			if err != nil {
-				s.stop()
-				goto exit
-			}
+		case cmd := <-readline:
 			if err := s.RunCommand(ctx, cmd); err != nil {
 				s.Printf("%v\n", err)
 			}
