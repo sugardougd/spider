@@ -6,10 +6,11 @@
 
 # release note
 
-| version | date       | description       |
-|---------|------------|-------------------|
-| 1.0.0   | 2025-06-23 | first version     |
-| 1.0.2   | 2025-06-25 | upgrade to go1.23 |
+| version | date       | description          |
+|---------|------------|----------------------|
+| 1.0.0   | 2025-06-23 | first version        |
+| 1.0.2   | 2025-06-25 | upgrade to go1.23    |
+| 1.0.3   | 2025-06-26 | support ExecutedHook |
 
 --- 
 
