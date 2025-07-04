@@ -29,7 +29,7 @@ func (commands *Commands) add(command *Command, helpFlag bool) error {
 		return err
 	}
 	if helpFlag {
-		command.flags.Bool(&Flag{Short: "h", Long: "help", Help: "display help", Default: false})
+		command.flags.Bool(&Flag{Short: "h", Long: "help", Help: "show help information", Default: false})
 	}
 	command.registerFlags()
 	command.registerArgs()
