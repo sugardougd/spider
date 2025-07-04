@@ -97,7 +97,11 @@ func (s *Spider) RunCommand(ctx context.Context, cmd string) error {
 		ArgValues:  argValues,
 		Ctx:        ctx,
 	}
-	return command.Run(context)
+	err = command.Run(context)
+	if s.Config.ExecutedHook != nil {
+		s.Config.ExecutedHook(context, err)
+	}
+	return err
 }
 
 func (s *Spider) parse(cmd string, required bool) (*Command, FlagValues, ArgValues, error) {

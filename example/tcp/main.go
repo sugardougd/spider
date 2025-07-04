@@ -13,7 +13,10 @@ func main() {
 		spider.ConfigName("spider"),
 		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
 		spider.ConfigPrompt("spider > "),
-		spider.ConfigAddress(":8080"))
+		spider.ConfigAddress(":8080"),
+		spider.ConfigExecutedHook(func(ctx *spider.Context, err error) {
+			fmt.Printf("Executed command: %s\r\n", ctx.Command.Name)
+		}))
 	commands := spider.NewCommands(commands.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
