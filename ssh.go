@@ -17,12 +17,13 @@ func RunSSH(ctx context.Context, config *Config, commands *Commands) error {
 	// SSH 配置
 	sshConfig, err := config.newSSHConfig()
 	if err != nil {
-		panic(err)
+		fmt.Printf("Failed to create  ServerConfig: %v\r\n", err)
+		return err
 	}
 	// 监听 TCP 端口
 	listener, err := net.Listen("tcp", config.Address)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	fmt.Printf("Listening SSH on %s\r\n", config.Address)
 
