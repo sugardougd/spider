@@ -17,13 +17,12 @@ func RunSSH(ctx context.Context, config *Config, commands *Commands) error {
 	// SSH 配置
 	sshConfig, err := config.newSSHConfig()
 	if err != nil {
-		fmt.Printf("Failed to create  ServerConfig: %v\r\n", err)
-		return err
+		panic(err)
 	}
 	// 监听 TCP 端口
 	listener, err := net.Listen("tcp", config.Address)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	fmt.Printf("Listening SSH on %s\r\n", config.Address)
 
@@ -136,11 +135,11 @@ func (c *Config) newSSHConfig() (*ssh.ServerConfig, error) {
 	// 生成一个 SSH 密钥对
 	privateBytes, err := os.ReadFile(c.PrivateFile)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	privateKey, err := ssh.ParsePrivateKey(privateBytes)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	sshConfig.AddHostKey(privateKey)
 	return sshConfig, nil
