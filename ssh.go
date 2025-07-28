@@ -136,11 +136,11 @@ func (c *Config) newSSHConfig() (*ssh.ServerConfig, error) {
 	// 生成一个 SSH 密钥对
 	privateBytes, err := os.ReadFile(c.PrivateFile)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 	privateKey, err := ssh.ParsePrivateKey(privateBytes)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 	sshConfig.AddHostKey(privateKey)
 	return sshConfig, nil
