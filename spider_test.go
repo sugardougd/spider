@@ -252,9 +252,9 @@ func testCommand() *Commands {
 
 func NewSpiderMock() *Spider {
 	config := NewConfig(
-		ConfigName("spider"),
-		ConfigDescription("spider is a tool to list and diagnose Go processes"),
-		ConfigPrompt("spider > "))
+		WithName("spider"),
+		WithDescription("spider is a tool to list and diagnose Go processes"),
+		WithPrompt("spider > "))
 	s := New(config)
 	s.AddCommands(testCommand())
 	return s

@@ -32,37 +32,37 @@ type Config struct {
 
 type ConfigOptional func(option *ConfigOption)
 
-func ConfigName(name string) ConfigOptional {
+func WithName(name string) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.Name = name
 	}
 }
 
-func ConfigDescription(description string) ConfigOptional {
+func WithDescription(description string) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.Description = description
 	}
 }
 
-func ConfigPrompt(prompt string) ConfigOptional {
+func WithPrompt(prompt string) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.Prompt = prompt
 	}
 }
 
-func ConfigInteractive(interactive bool) ConfigOptional {
+func WithInteractive(interactive bool) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.Interactive = interactive
 	}
 }
 
-func ConfigExecutedHook(hook ExecutedHook) ConfigOptional {
+func WithExecutedHook(hook ExecutedHook) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.ExecutedHook = hook
 	}
 }
 
-func ConfigWelcome(welcome string) ConfigOptional {
+func WithWelcome(welcome string) ConfigOptional {
 	return func(option *ConfigOption) {
 		option.Welcome = welcome
 	}
@@ -81,31 +81,31 @@ func WithSSHConfig(config SSHConfig) ConfigOptional {
 }
 
 func NewConsoleConfig(name, description, prompt, welcome string, hook ExecutedHook) *Config {
-	return NewConfig(ConfigName(name),
-		ConfigDescription(description),
-		ConfigInteractive(true),
-		ConfigPrompt(prompt),
-		ConfigWelcome(welcome),
-		ConfigExecutedHook(hook))
+	return NewConfig(WithName(name),
+		WithDescription(description),
+		WithInteractive(true),
+		WithPrompt(prompt),
+		WithWelcome(welcome),
+		WithExecutedHook(hook))
 }
 
 func NewTCPConfig(name, description, prompt, welcome string, hook ExecutedHook, config TCPConfig) *Config {
-	return NewConfig(ConfigName(name),
-		ConfigDescription(description),
-		ConfigInteractive(false),
-		ConfigPrompt(prompt),
-		ConfigWelcome(welcome),
-		ConfigExecutedHook(hook),
+	return NewConfig(WithName(name),
+		WithDescription(description),
+		WithInteractive(false),
+		WithPrompt(prompt),
+		WithWelcome(welcome),
+		WithExecutedHook(hook),
 		WithTCPConfig(config))
 }
 
 func NewSSHConfig(name, description, prompt, welcome string, hook ExecutedHook, config SSHConfig) *Config {
-	return NewConfig(ConfigName(name),
-		ConfigDescription(description),
-		ConfigInteractive(true),
-		ConfigPrompt(prompt),
-		ConfigWelcome(welcome),
-		ConfigExecutedHook(hook),
+	return NewConfig(WithName(name),
+		WithDescription(description),
+		WithInteractive(true),
+		WithPrompt(prompt),
+		WithWelcome(welcome),
+		WithExecutedHook(hook),
 		WithSSHConfig(config))
 }
 
