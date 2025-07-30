@@ -3,17 +3,26 @@ package spider
 type ExecutedHook func(*Context, error)
 
 type ConfigOption struct {
-	Name              string            // specifies the application name. This field is required.
-	Description       string            // specifies the application description.
-	Prompt            string            // defines the shell prompt.
-	Interactive       bool              // cannot auto complete if not
-	ExecutedHook      ExecutedHook      // 执行命令后回调函数
-	Welcome           string            // welcome message
-	Address           string            // 监听地址 IP:PORT. for tcp & ssh
-	NoClientAuth      bool              // 是否认证客户端. for ssh
-	passwordValidator PasswordValidator // 校验用户名密码. for ssh
-	Banner            string            // banner. for ssh
-	PrivateFile       string            // RSA私钥文件. for ssh
+	Name         string       // specifies the application name. This field is required.
+	Description  string       // specifies the application description.
+	Prompt       string       // defines the shell prompt.
+	Interactive  bool         // cannot auto complete if not
+	ExecutedHook ExecutedHook // 执行命令后回调函数
+	Welcome      string       // welcome message
+	TCPConfig    TCPConfig
+	SSHConfig    SSHConfig
+}
+
+type TCPConfig struct {
+	Address string // 监听地址 IP:PORT
+}
+
+type SSHConfig struct {
+	Address           string            // 监听地址 IP:PORT
+	NoClientAuth      bool              // 是否认证客户端
+	PasswordValidator PasswordValidator // 校验用户名密码
+	Banner            string            // banner
+	PrivateFile       string            // RSA私钥文件
 }
 
 // Config specifies the spider options.
@@ -59,34 +68,45 @@ func ConfigWelcome(welcome string) ConfigOptional {
 	}
 }
 
-func ConfigAddress(address string) ConfigOptional {
+func WithTCPConfig(config TCPConfig) ConfigOptional {
 	return func(option *ConfigOption) {
-		option.Address = address
+		option.TCPConfig = config
 	}
 }
 
-func ConfigNoClientAuth(noClientAuth bool) ConfigOptional {
+func WithSSHConfig(config SSHConfig) ConfigOptional {
 	return func(option *ConfigOption) {
-		option.NoClientAuth = noClientAuth
+		option.SSHConfig = config
 	}
 }
 
-func ConfigPasswordValidator(passwordValidator PasswordValidator) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.passwordValidator = passwordValidator
-	}
+func NewConsoleConfig(name, description, prompt, welcome string, hook ExecutedHook) *Config {
+	return NewConfig(ConfigName(name),
+		ConfigDescription(description),
+		ConfigInteractive(true),
+		ConfigPrompt(prompt),
+		ConfigWelcome(welcome),
+		ConfigExecutedHook(hook))
 }
 
-func ConfigBanner(banner string) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.Banner = banner
-	}
+func NewTCPConfig(name, description, prompt, welcome string, hook ExecutedHook, config TCPConfig) *Config {
+	return NewConfig(ConfigName(name),
+		ConfigDescription(description),
+		ConfigInteractive(false),
+		ConfigPrompt(prompt),
+		ConfigWelcome(welcome),
+		ConfigExecutedHook(hook),
+		WithTCPConfig(config))
 }
 
-func ConfigPrivateFile(privateFile string) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.PrivateFile = privateFile
-	}
+func NewSSHConfig(name, description, prompt, welcome string, hook ExecutedHook, config SSHConfig) *Config {
+	return NewConfig(ConfigName(name),
+		ConfigDescription(description),
+		ConfigInteractive(true),
+		ConfigPrompt(prompt),
+		ConfigWelcome(welcome),
+		ConfigExecutedHook(hook),
+		WithSSHConfig(config))
 }
 
 func NewConfig(optional ...ConfigOptional) *Config {

@@ -9,16 +9,14 @@ import (
 )
 
 func main() {
-	config := spider.NewConfig(
-		spider.ConfigName("spider"),
-		spider.ConfigDescription("spider is a tool to list and diagnose Go processes"),
-		spider.ConfigPrompt("spider > "),
-		spider.ConfigInteractive(true),
-		spider.ConfigAddress(":8080"),
-		spider.ConfigNoClientAuth(false),
-		spider.ConfigBanner("welcome to spider!\n"),
-		spider.ConfigPrivateFile("spider/ssh/spider"),
-		spider.ConfigPasswordValidator(passwordValidator))
+	config := spider.NewSSHConfig("spider", "spider is a tool to list and diagnose Go processes",
+		"spider >", "type 'help' for more information", nil, spider.SSHConfig{
+			Address:           ":8080",
+			NoClientAuth:      false,
+			PasswordValidator: passwordValidator,
+			Banner:            "welcome to spider!\n",
+			PrivateFile:       "ssh/spider",
+		})
 	commands := spider.NewCommands(commands.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
@@ -27,6 +25,6 @@ func main() {
 	}
 }
 
-func passwordValidator(user, password string) bool {
-	return "admin" == user && "admin" == password
+func passwordValidator(user string, password []byte) bool {
+	return "admin" == user && "admin" == string(password)
 }

@@ -8,11 +8,12 @@ import (
 )
 
 func RunTCP(ctx context.Context, config *Config, commands *Commands) error {
-	listener, err := net.Listen("tcp", config.Address)
+	address := config.TCPConfig.Address
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Listening TCP on %s\r\n", config.Address)
+	fmt.Printf("Listening TCP on %s\r\n", address)
 
 	go acceptTCPConnection(ctx, listener, config, commands)
 	select {

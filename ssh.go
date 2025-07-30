@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-type PasswordValidator func(user, password string) bool
+type PasswordValidator func(user string, password []byte) bool
 
 func RunSSH(ctx context.Context, config *Config, commands *Commands) error {
 	// SSH 配置
@@ -21,11 +21,12 @@ func RunSSH(ctx context.Context, config *Config, commands *Commands) error {
 		return err
 	}
 	// 监听 TCP 端口
-	listener, err := net.Listen("tcp", config.Address)
+	address := config.SSHConfig.Address
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Listening SSH on %s\r\n", config.Address)
+	fmt.Printf("Listening SSH on %s\r\n", address)
 
 	go acceptSSHConnection(ctx, listener, config, sshConfig, commands)
 
@@ -116,12 +117,12 @@ func handleSSHChannelRequests(sshConn *ssh.ServerConn, reqs <-chan *ssh.Request,
 
 func (c *Config) newSSHConfig() (*ssh.ServerConfig, error) {
 	sshConfig := &ssh.ServerConfig{
-		NoClientAuth: c.NoClientAuth,
+		NoClientAuth: c.SSHConfig.NoClientAuth,
 	}
-	if c.passwordValidator != nil {
-		sshConfig.PasswordCallback = func(conn ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+	if c.SSHConfig.PasswordValidator != nil {
+		sshConfig.PasswordCallback = func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 			// 这里可以添加你自己的认证逻辑，例如检查用户名和密码
-			if c.passwordValidator(conn.User(), string(pass)) {
+			if c.SSHConfig.PasswordValidator(conn.User(), password) {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("password rejected for %q", conn.User())
@@ -130,11 +131,11 @@ func (c *Config) newSSHConfig() (*ssh.ServerConfig, error) {
 
 	// banner
 	sshConfig.BannerCallback = func(conn ssh.ConnMetadata) string {
-		return c.Banner
+		return c.SSHConfig.Banner
 	}
 
 	// 生成一个 SSH 密钥对
-	privateBytes, err := os.ReadFile(c.PrivateFile)
+	privateBytes, err := os.ReadFile(c.SSHConfig.PrivateFile)
 	if err != nil {
 		return nil, err
 	}
