@@ -9,10 +9,18 @@ import (
 )
 
 func main() {
-	config := spider.NewTCPConfig("spider", "spider is a tool to list and diagnose Go processes",
-		"spider >", "type 'help' for more information", func(ctx *spider.Context, err error) {
-			fmt.Printf("Executed command: %s\r\n", ctx.Command.Name)
-		}, spider.TCPConfig{Address: ":8080"})
+	config := &spider.TCPConfig{
+		Config: &spider.Config{
+			Name:        "spider",
+			Description: "spider is a tool to list and diagnose Go processes",
+			Prompt:      "spider >",
+			Welcome:     "type 'help' for more information",
+			ExecutedHook: func(ctx *spider.Context, err error) {
+				fmt.Printf("Executed command: %s\r\n", ctx.Command.Name)
+			},
+		},
+		Address: ":8080",
+	}
 	commands := spider.NewCommands(commands.NoyaCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)

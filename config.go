@@ -1,23 +1,30 @@
 package spider
 
+import (
+	"fmt"
+	"golang.org/x/crypto/ssh"
+	"os"
+)
+
 type ExecutedHook func(*Context, error)
 
-type ConfigOption struct {
+// Config specifies the spider options.
+type Config struct {
 	Name         string       // specifies the application name. This field is required.
 	Description  string       // specifies the application description.
 	Prompt       string       // defines the shell prompt.
 	Interactive  bool         // cannot auto complete if not
 	ExecutedHook ExecutedHook // 执行命令后回调函数
 	Welcome      string       // welcome message
-	TCPConfig    TCPConfig
-	SSHConfig    SSHConfig
 }
 
 type TCPConfig struct {
+	*Config
 	Address string // 监听地址 IP:PORT
 }
 
 type SSHConfig struct {
+	*Config
 	Address           string            // 监听地址 IP:PORT
 	NoClientAuth      bool              // 是否认证客户端
 	PasswordValidator PasswordValidator // 校验用户名密码
@@ -25,100 +32,34 @@ type SSHConfig struct {
 	PrivateFile       string            // RSA私钥文件
 }
 
-// Config specifies the spider options.
-type Config struct {
-	ConfigOption
-}
-
-type ConfigOptional func(option *ConfigOption)
-
-func WithName(name string) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.Name = name
+func (c *SSHConfig) newSSHConfig() (*ssh.ServerConfig, error) {
+	sshConfig := &ssh.ServerConfig{
+		NoClientAuth: c.NoClientAuth,
 	}
-}
-
-func WithDescription(description string) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.Description = description
+	if c.PasswordValidator != nil {
+		sshConfig.PasswordCallback = func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
+			// 这里可以添加你自己的认证逻辑，例如检查用户名和密码
+			if c.PasswordValidator(conn.User(), password) {
+				return nil, nil
+			}
+			return nil, fmt.Errorf("password rejected for %q", conn.User())
+		}
 	}
-}
 
-func WithPrompt(prompt string) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.Prompt = prompt
+	// banner
+	sshConfig.BannerCallback = func(conn ssh.ConnMetadata) string {
+		return c.Banner
 	}
-}
 
-func WithInteractive(interactive bool) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.Interactive = interactive
+	// 生成一个 SSH 密钥对
+	privateBytes, err := os.ReadFile(c.PrivateFile)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func WithExecutedHook(hook ExecutedHook) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.ExecutedHook = hook
+	privateKey, err := ssh.ParsePrivateKey(privateBytes)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func WithWelcome(welcome string) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.Welcome = welcome
-	}
-}
-
-func WithTCPConfig(config TCPConfig) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.TCPConfig = config
-	}
-}
-
-func WithSSHConfig(config SSHConfig) ConfigOptional {
-	return func(option *ConfigOption) {
-		option.SSHConfig = config
-	}
-}
-
-func NewConsoleConfig(name, description, prompt, welcome string, hook ExecutedHook) *Config {
-	return NewConfig(WithName(name),
-		WithDescription(description),
-		WithInteractive(true),
-		WithPrompt(prompt),
-		WithWelcome(welcome),
-		WithExecutedHook(hook))
-}
-
-func NewTCPConfig(name, description, prompt, welcome string, hook ExecutedHook, config TCPConfig) *Config {
-	return NewConfig(WithName(name),
-		WithDescription(description),
-		WithInteractive(false),
-		WithPrompt(prompt),
-		WithWelcome(welcome),
-		WithExecutedHook(hook),
-		WithTCPConfig(config))
-}
-
-func NewSSHConfig(name, description, prompt, welcome string, hook ExecutedHook, config SSHConfig) *Config {
-	return NewConfig(WithName(name),
-		WithDescription(description),
-		WithInteractive(true),
-		WithPrompt(prompt),
-		WithWelcome(welcome),
-		WithExecutedHook(hook),
-		WithSSHConfig(config))
-}
-
-func NewConfig(optional ...ConfigOptional) *Config {
-	option := &ConfigOption{}
-	for _, o := range optional {
-		o(option)
-	}
-	return &Config{*option}
-}
-
-func (c *Config) Option(optional ...ConfigOptional) {
-	for _, o := range optional {
-		o(&c.ConfigOption)
-	}
+	sshConfig.AddHostKey(privateKey)
+	return sshConfig, nil
 }

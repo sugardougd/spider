@@ -251,10 +251,11 @@ func testCommand() *Commands {
 }
 
 func NewSpiderMock() *Spider {
-	config := NewConfig(
-		WithName("spider"),
-		WithDescription("spider is a tool to list and diagnose Go processes"),
-		WithPrompt("spider > "))
-	s := New(config, testCommand())
+	config := Config{
+		Name:        "spider",
+		Description: "spider is a tool to list and diagnose Go processes",
+		Prompt:      "spider >",
+	}
+	s := New(&config, testCommand())
 	return s
 }

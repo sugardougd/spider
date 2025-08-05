@@ -7,15 +7,16 @@ import (
 	"net"
 )
 
-func RunTCP(ctx context.Context, config *Config, commands *Commands) error {
-	address := config.TCPConfig.Address
+func RunTCP(ctx context.Context, config *TCPConfig, commands *Commands) error {
+	address := config.Address
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Listening TCP on %s\r\n", address)
 
-	go acceptTCPConnection(ctx, listener, config, commands)
+	config.Interactive = false
+	go acceptTCPConnection(ctx, listener, config.Config, commands)
 	select {
 	case <-ctx.Done():
 		return listener.Close()
