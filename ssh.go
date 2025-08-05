@@ -78,8 +78,7 @@ func handleSSHChannel(ctx context.Context, sshConn *ssh.ServerConn, newChannel s
 		fmt.Printf("Could not accept channel: %v\r\n", err)
 		return
 	}
-	s := New(config)
-	s.AddCommands(commands)
+	s := New(config, commands)
 	defer channel.Close()
 	go handleSSHChannelRequests(sshConn, reqs, func(width, height int) {
 		s.SetSize(width, height)

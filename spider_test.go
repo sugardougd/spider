@@ -255,7 +255,6 @@ func NewSpiderMock() *Spider {
 		WithName("spider"),
 		WithDescription("spider is a tool to list and diagnose Go processes"),
 		WithPrompt("spider > "))
-	s := New(config)
-	s.AddCommands(testCommand())
+	s := New(config, testCommand())
 	return s
 }

@@ -19,7 +19,7 @@ type Spider struct {
 	mux        sync.Mutex
 }
 
-func New(config *Config) *Spider {
+func New(config *Config, commands *Commands) *Spider {
 	s := Spider{
 		Config: config,
 	}
@@ -27,6 +27,9 @@ func New(config *Config) *Spider {
 	s.AddCommand(spiderCommand())
 	s.AddCommand(helpCommand())
 	s.AddCommand(exitCommand())
+	if commands != nil {
+		s.AddCommands(commands)
+	}
 	return &s
 }
 

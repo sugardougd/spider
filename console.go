@@ -16,8 +16,7 @@ func RunConsole(ctx context.Context, config *Config, commands *Commands) error {
 	}
 	defer term.Restore(fd, raw)
 
-	s := New(config)
-	s.AddCommands(commands)
+	s := New(config, commands)
 	terminal := term.NewTerminal(&ReadWriter{
 		Reader: os.Stdin,
 		Writer: os.Stdout,

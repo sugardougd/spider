@@ -37,8 +37,7 @@ func acceptTCPConnection(ctx context.Context, listener net.Listener, config *Con
 func handleTCPConnection(ctx context.Context, conn net.Conn, config *Config, commands *Commands) {
 	defer conn.Close()
 	fmt.Printf("[%s]New TCP connection\r\n", conn.RemoteAddr())
-	s := New(config)
-	s.AddCommands(commands)
+	s := New(config, commands)
 	if err := s.RunWithTerminal(ctx, term.NewTerminal(conn, config.Prompt)); err != nil {
 		fmt.Printf("[%s]Exit Terminal Spider: %v\r\n", conn.RemoteAddr(), err)
 	}
