@@ -80,9 +80,7 @@ func handleSSHChannel(ctx context.Context, sshConn *ssh.ServerConn, newChannel s
 	}
 	s := New(config, commands)
 	defer channel.Close()
-	go handleSSHChannelRequests(sshConn, reqs, func(width, height int) {
-		s.SetSize(width, height)
-	})
+	go handleSSHChannelRequests(sshConn, reqs, s.onWindowChanged)
 	if err = s.RunWithTerminal(ctx, term.NewTerminal(channel, config.Prompt)); err != nil {
 		fmt.Printf("[%s@%s]Exit Terminal Spider: %v\r\n", sshConn.User(), sshConn.RemoteAddr(), err)
 	}

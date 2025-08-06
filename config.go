@@ -18,6 +18,9 @@ type Config struct {
 	Welcome      string       // welcome message
 }
 
+func (c *Config) init() {
+}
+
 type TCPConfig struct {
 	*Config
 	Address string // 监听地址 IP:PORT

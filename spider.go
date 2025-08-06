@@ -184,6 +184,10 @@ func (s *Spider) SetSize(width, height int) {
 	}
 }
 
+func (s *Spider) onWindowChanged(width, height int) {
+	s.SetSize(width, height)
+}
+
 func (s *Spider) PrintHelp() {
 	s.Println()
 	s.Println(s.Config.Description)

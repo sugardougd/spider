@@ -4,8 +4,6 @@ import (
 	"context"
 	"golang.org/x/term"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 func RunConsole(ctx context.Context, config *Config, commands *Commands) error {
@@ -24,28 +22,10 @@ func RunConsole(ctx context.Context, config *Config, commands *Commands) error {
 	}, config.Prompt)
 
 	// register width change
-	onWindowChanged(fd, func(width, height int) {
-		s.SetSize(width, height)
-	})
+	registerWindowChange(fd, s.onWindowChanged)
 
 	if err = s.RunWithTerminal(ctx, terminal); err != nil {
 		return err
 	}
 	return nil
-}
-
-func onWindowChanged(fd int, windowChanged func(width, height int)) {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGWINCH)
-	go func() {
-		for {
-			_, ok := <-ch
-			if !ok {
-				break
-			}
-			if width, height, err := term.GetSize(fd); err == nil {
-				windowChanged(width, height)
-			}
-		}
-	}()
 }
