@@ -102,9 +102,6 @@ func (s *Spider) RunCommand(ctx context.Context, cmd string) error {
 	if command == nil {
 		return nil
 	}
-	if command.Run == nil {
-		return fmt.Errorf("illagel command Run '%s'", command.Name)
-	}
 	context := &Context{
 		Spider:     s,
 		Command:    command,
@@ -113,7 +110,11 @@ func (s *Spider) RunCommand(ctx context.Context, cmd string) error {
 		ArgValues:  argValues,
 		Ctx:        ctx,
 	}
-	err = command.Run(context)
+	if helpFlag, _ := flagValues.Bool(command, "help"); helpFlag || command.Run == nil {
+		s.PrintCommandHelp(command)
+	} else {
+		err = command.Run(context)
+	}
 	if s.Config.ExecutedHook != nil {
 		s.Config.ExecutedHook(context, err)
 	}
@@ -133,13 +134,14 @@ func (s *Spider) parse(cmd string, required bool) (*Command, FlagValues, ArgValu
 	if command == nil {
 		return nil, nil, nil, fmt.Errorf("illegal command '%s'", args[0])
 	}
-	helpFlag, err := flagValues.Bool(command, "help")
-	if (err == nil && helpFlag) || command.Run == nil {
-		s.PrintCommandHelp(command)
-		return nil, nil, nil, nil
-	}
-	// parse args
+
 	argValues := make(ArgValues)
+	helpFlag, _ := flagValues.Bool(command, "help")
+	if helpFlag {
+		return command, flagValues, argValues, nil
+	}
+
+	// parse args
 	args, err = command.args.parse(args, argValues)
 	if err != nil {
 		return nil, nil, nil, err

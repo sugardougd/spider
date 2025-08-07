@@ -69,12 +69,16 @@ func (flags *Flags) parse(command *Command, args []string, required bool, flagVa
 	remaining = args
 
 	// check require argument and set the default values
+	helpFlag, _ := flagValues.Bool(command, "help")
 	for _, flag := range flags.list {
 		key := FlagKey{command: command, long: flag.Long}
 		if _, ok := flagValues[key]; ok {
 			continue
 		}
 		if flag.Require && required {
+			if helpFlag {
+				continue
+			}
 			err = fmt.Errorf("missing flag '-%s'", flag.Short)
 			break
 		}

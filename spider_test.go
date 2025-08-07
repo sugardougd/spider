@@ -25,6 +25,7 @@ func TestSpider_parse(t *testing.T) {
 
 	correctCmd := []string{
 		"command",
+		"command -h",
 		"command -o flag1",
 		"command --flag1 flag1",
 		"command -t 2",
