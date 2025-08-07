@@ -2,12 +2,14 @@ package spider
 
 import (
 	"context"
-	"golang.org/x/term"
 	"os"
+	"syscall"
+
+	"golang.org/x/term"
 )
 
 func RunConsole(ctx context.Context, config *Config, commands *Commands) error {
-	fd := int(os.Stdout.Fd())
+	fd := int(syscall.Stdin)
 	raw, err := term.MakeRaw(fd)
 	if err != nil {
 		return err
