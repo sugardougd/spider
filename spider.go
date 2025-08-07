@@ -3,12 +3,13 @@ package spider
 import (
 	"context"
 	"fmt"
-	"golang.org/x/term"
 	"io"
 	"os"
 	"strings"
 	"sync"
 	"text/tabwriter"
+
+	"golang.org/x/term"
 )
 
 type Spider struct {

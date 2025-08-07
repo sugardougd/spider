@@ -3,8 +3,9 @@ package spider
 import (
 	"context"
 	"fmt"
-	"golang.org/x/term"
 	"net"
+
+	"golang.org/x/term"
 )
 
 func RunTCP(ctx context.Context, config *TCPConfig, commands *Commands) error {

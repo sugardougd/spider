@@ -3,10 +3,11 @@
 package spider
 
 import (
-	"golang.org/x/term"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"golang.org/x/term"
 )
 
 func registerWindowChange(fd int, f func(width, height int)) {

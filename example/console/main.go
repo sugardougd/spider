@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/sugardougd/spider"
 	"github.com/sugardougd/spider/example/commands"
-	"time"
 )
 
 func main() {

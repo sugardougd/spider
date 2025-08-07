@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"net"
+
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
-	"net"
 )
 
 type PasswordValidator func(user string, password []byte) bool

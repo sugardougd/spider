@@ -2,13 +2,14 @@ package commands
 
 import (
 	"fmt"
-	"github.com/sugardougd/spider"
-	"github.com/xuri/excelize/v2"
 	"io"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sugardougd/spider"
+	"github.com/xuri/excelize/v2"
 )
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))

@@ -2,8 +2,9 @@ package spider
 
 import (
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"os"
+
+	"golang.org/x/crypto/ssh"
 )
 
 type ExecutedHook func(*Context, error)
