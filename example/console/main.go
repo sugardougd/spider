@@ -16,7 +16,7 @@ func main() {
 		Prompt:      "spider >",
 		Welcome:     "type 'help' for more information",
 	}
-	commands := spider.NewCommands(commands.NoyaCommand())
+	commands := spider.NewCommands(commands.HelloCommand())
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Minute*3)
 	if err := spider.RunConsole(ctx, config, commands); err != nil {

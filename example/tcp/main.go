@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
+	"example/commands"
 	"fmt"
-	"time"
-
 	"github.com/sugardougd/spider"
-	"github.com/sugardougd/spider/example/commands"
+	"time"
 )
 
 func main() {

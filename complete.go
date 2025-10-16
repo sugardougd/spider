@@ -15,15 +15,11 @@ func (s *Spider) autoComplete(line string, pos int, key rune) (newLine string, n
 	}
 	prefix := line[:pos]
 	args := strings.Fields(prefix)
-	tip := ""
+	keyWord := ""
 	if len(args) > 0 && !unicode.IsSpace(rune(line[pos-1])) {
-		tip = args[len(args)-1]
+		// the previous character of pressed TAB is not space
+		keyWord = args[len(args)-1]
 		args = args[:len(args)-1]
-	}
-
-	// auto-completion for help
-	if len(args) > 0 && args[0] == "help" {
-		args = args[1:]
 	}
 
 	var commands Commands
@@ -33,49 +29,56 @@ func (s *Spider) autoComplete(line string, pos int, key rune) (newLine string, n
 	if len(args) == 0 {
 		commands = s.Commands
 	} else {
-		command, args, err := s.Commands.parse(args, false, make(FlagValues))
-		if err != nil || command == nil || len(args) > 0 {
-			// len(args) > 0 : still multiple parameters that have not been suggestions
+		command, remaining, err := s.Commands.parse(args, false, make(FlagValues))
+		if err != nil || command == nil || len(remaining) > 0 {
+			// not match,not suggestions
 			return
 		}
 		commands = command.Children
 		flags = command.flags
 	}
 
-	if len(tip) > 0 {
-		for _, cmd := range commands.list {
-			if strings.HasPrefix(cmd.Name, tip) {
-				suggestions = append(suggestions, strings.TrimPrefix(cmd.Name, tip))
-			}
-			for _, alias := range cmd.Aliases {
-				if strings.HasPrefix(alias, tip) {
-					suggestions = append(suggestions, strings.TrimPrefix(alias, tip))
-				}
-			}
-		}
+	// suggestion by key word(keyWord)
+	if strings.HasPrefix(keyWord, "-") {
+		// suggestion flags
 		for _, flag := range flags.list {
 			if len(flag.Short) > 0 {
 				short := "-" + flag.Short
-				if strings.HasPrefix(short, tip) {
-					suggestions = append(suggestions, strings.TrimPrefix(short, tip))
+				if len(short) > len(keyWord) && strings.HasPrefix(short, keyWord) {
+					suggestions = append(suggestions, short)
 				}
 			}
 			long := "--" + flag.Long
-			if strings.HasPrefix(long, tip) {
-				suggestions = append(suggestions, strings.TrimPrefix(long, tip))
+			if len(long) > len(keyWord) && strings.HasPrefix(long, keyWord) {
+				suggestions = append(suggestions, long)
 			}
 		}
-	} else {
+	} else if len(keyWord) > 0 {
+		// suggestion command
 		for _, cmd := range commands.list {
-			if strings.HasPrefix(cmd.Name, tip) {
-				suggestions = append(suggestions, strings.TrimPrefix(cmd.Name, tip))
+			if cmd.Name == keyWord {
+				suggestions = commandSuggestions(suggestions, cmd)
+			} else if strings.HasPrefix(cmd.Name, keyWord) {
+				suggestions = append(suggestions, cmd.Name)
 			}
 			for _, alias := range cmd.Aliases {
-				if strings.HasPrefix(alias, tip) {
-					suggestions = append(suggestions, strings.TrimPrefix(alias, tip))
+				if alias == keyWord {
+					suggestions = commandSuggestions(suggestions, cmd)
+				} else if strings.HasPrefix(alias, keyWord) {
+					suggestions = append(suggestions, alias)
 				}
 			}
 		}
+	} else {
+		// suggestion by space
+		// suggestion sub-command
+		for _, cmd := range commands.list {
+			suggestions = append(suggestions, cmd.Name)
+			for _, alias := range cmd.Aliases {
+				suggestions = append(suggestions, alias, keyWord)
+			}
+		}
+		// suggestion flags
 		for _, flag := range flags.list {
 			if len(flag.Short) > 0 {
 				suggestions = append(suggestions, "-"+flag.Short)
@@ -84,21 +87,39 @@ func (s *Spider) autoComplete(line string, pos int, key rune) (newLine string, n
 		}
 	}
 
-	if len(suggestions) > 0 {
-		ok = true
-		if len(suggestions) == 1 {
-			newPos = pos + len(suggestions[0])
-			newLine = prefix + suggestions[0] + line[pos:]
-		} else {
-			for i, s := range suggestions {
-				suggestions[i] = tip + s
-			}
-			s.Print(s.Config.Prompt)
-			s.Println(line)
-			s.Println(strings.Join(suggestions, TAB2))
-			newPos = pos
-			newLine = line
-		}
+	if ok = len(suggestions) > 0; !ok {
+		return
 	}
+	if len(suggestions) == 1 {
+		// only one suggestion, append to the end
+		newLine = prefix[:len(prefix)-len(keyWord)]
+		if len(newLine) == 0 || unicode.IsSpace(rune(newLine[len(newLine)-1])) {
+			newPos = len(newLine) + len(suggestions[0])
+			newLine += suggestions[0] + line[pos:]
+		} else {
+			newPos = len(newLine) + len(suggestions[0]) + 1
+			newLine += BLANK + suggestions[0] + line[pos:]
+		}
+	} else {
+		newPos = pos
+		newLine = line
+		s.Print(s.Config.Prompt)
+		s.Println(newLine)
+		s.Println(strings.Join(suggestions, TAB2))
+	}
+
 	return
+}
+
+func commandSuggestions(suggestions []string, command *Command) []string {
+	for _, child := range command.Children.list {
+		suggestions = append(suggestions, child.Name)
+	}
+	for _, flag := range command.flags.list {
+		if len(flag.Short) > 0 {
+			suggestions = append(suggestions, "-"+flag.Short)
+		}
+		suggestions = append(suggestions, "--"+flag.Long)
+	}
+	return suggestions
 }
