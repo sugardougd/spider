@@ -56,6 +56,7 @@ func (s *Spider) RunWithTerminal(ctx context.Context, terminal *term.Terminal) e
 	}()
 	s.terminal = terminal
 	s.terminal.AutoCompleteCallback = s.autoComplete
+	s.terminal.History = &RingBufferHistory{Max: 100}
 	if len(s.Config.Welcome) > 0 {
 		s.Println(s.Config.Welcome)
 	}
