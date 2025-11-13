@@ -20,7 +20,9 @@ func HelloCommand() *spider.Command {
 		Name:        "date",
 		Description: "hello date tools",
 		Usage:       "hello date",
-		Flags:       noyaCommandFlags,
+		Flags: func(f *spider.Flags) {
+			f.Int(&spider.Flag{Short: "n", Long: "name", Help: "the name flag", Default: ""})
+		},
 		Run: func(c *spider.Context) error {
 			c.Spider.Println("Hello", time.Now().Format("2006-01-02"))
 			return nil
@@ -31,7 +33,9 @@ func HelloCommand() *spider.Command {
 		Name:        "time",
 		Description: "hello time tools",
 		Usage:       "hello time",
-		Flags:       noyaCommandFlags,
+		Flags: func(f *spider.Flags) {
+			f.Int(&spider.Flag{Short: "n", Long: "name", Help: "the name flag", Default: ""})
+		},
 		Run: func(c *spider.Context) error {
 			c.Spider.Println("Hello", time.Now().Format("15:04:05"))
 			return nil
@@ -42,7 +46,9 @@ func HelloCommand() *spider.Command {
 		Name:        "date-time",
 		Description: "hello date-time tools",
 		Usage:       "hello date-time",
-		Flags:       noyaCommandFlags,
+		Flags: func(f *spider.Flags) {
+			f.Int(&spider.Flag{Short: "n", Long: "name", Help: "the name flag", Default: ""})
+		},
 		Run: func(c *spider.Context) error {
 			c.Spider.Println("Hello", time.Now().Format("2006-01-02 15:04:05"))
 			return nil
